@@ -1363,6 +1363,10 @@ export const TaskCard = ({
                         <FileText className="h-4 w-4 mr-2" />
                         Generate Bill & Mark Billed
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onMarkPaid(task.id)}>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Paid
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onRestartTimer(task.id)}>
                         <Play className="h-4 w-4 mr-2" />
                         Resume Work
@@ -1375,7 +1379,7 @@ export const TaskCard = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onMarkPaid(task.id)}>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Payed
+                      Paid
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => setShowDeleteDialog(true)}
