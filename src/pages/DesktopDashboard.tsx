@@ -1613,6 +1613,7 @@ const DesktopDashboard = () => {
                                         <span className="font-mono text-sm font-semibold">{formatDuration(task.totalTime)}</span>
                                         <span className="font-bold text-sm">{formatCurrency(cost)}</span>
                                         {photoCount > 0 && <span className="text-xs text-muted-foreground">📷 {photoCount}</span>}
+                                        {task.needsFollowUp && <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white border-orange-500">⚑ Follow-up</Badge>}
                                         {task.diagnosticPdfUrl && (
                                           <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-500/40">
                                             <FileUp className="h-3 w-3 mr-1" />PDF
