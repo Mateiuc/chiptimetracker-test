@@ -1,25 +1,23 @@
-import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from "react";
+import { Settings as SettingsIcon, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { TaskCard } from '@/components/TaskCard';
-import { AddVehicleDialog } from '@/components/AddVehicleDialog';
-import { AddClientDialog } from '@/components/AddClientDialog';
-import { CompleteWorkDialog } from '@/components/CompleteWorkDialog';
-import { SettingsDialog } from '@/components/SettingsDialog';
-import { CloudSyncIndicator } from '@/components/CloudSyncIndicator';
-import { useClients, useVehicles, useTasks, useSettings, useCloudSync } from '@/hooks/useStorage';
-import { Task, WorkSession, WorkPeriod, Part, Client, Vehicle } from '@/types';
-import { useNotifications } from '@/hooks/useNotifications';
-import { migrateToCapacitorStorage } from '@/lib/storageMigration';
-import { migratePhotosToFilesystem } from '@/lib/photoMigration';
-import { photoStorageService } from '@/services/photoStorageService';
-import { getVehicleColorScheme } from '@/lib/vehicleColors';
-import { contactsService } from '@/services/contactsService';
-import { syncPortalToCloud } from '@/lib/clientPortalUtils';
-
-
+import { TaskCard } from "@/components/TaskCard";
+import { AddVehicleDialog } from "@/components/AddVehicleDialog";
+import { AddClientDialog } from "@/components/AddClientDialog";
+import { CompleteWorkDialog } from "@/components/CompleteWorkDialog";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { CloudSyncIndicator } from "@/components/CloudSyncIndicator";
+import { useClients, useVehicles, useTasks, useSettings, useCloudSync } from "@/hooks/useStorage";
+import { Task, WorkSession, WorkPeriod, Part, Client, Vehicle } from "@/types";
+import { useNotifications } from "@/hooks/useNotifications";
+import { migrateToCapacitorStorage } from "@/lib/storageMigration";
+import { migratePhotosToFilesystem } from "@/lib/photoMigration";
+import { photoStorageService } from "@/servihces/photoStorageService";
+import { getVehicleColorScheme } from "@/lib/vehicleColors";
+import { contactsService } from "@/services/contactsService";
+import { syncPortalToCloud } from "@/lib/clientPortalUtils";
 
 const Index = () => {
   const clientsHook = useClients();
@@ -46,12 +44,12 @@ const Index = () => {
     const performMigration = async () => {
       const migrated = await migrateToCapacitorStorage();
       if (migrated) {
-        toast({ 
-          title: 'Storage Upgraded', 
-          description: 'Your data is now stored in native Android storage for better reliability',
+        toast({
+          title: "Storage Upgraded",
+          description: "Your data is now stored in native Android storage for better reliability",
         });
       }
-      
+
       // Migrate photos to filesystem (runs after storage migration)
       const photoMigration = await migratePhotosToFilesystem();
       if (photoMigration.migrated) {
@@ -61,7 +59,6 @@ const Index = () => {
     performMigration();
   }, [toast]);
 
-
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [showCompleteWork, setShowCompleteWork] = useState(false);
@@ -69,19 +66,19 @@ const Index = () => {
   const [stoppingTaskId, setStoppingTaskId] = useState<string | null>(null);
 
   const handleStartTimer = (vehicleId: string) => {
-    const vehicle = vehicles.find(v => v.id === vehicleId);
-    const client = clients.find(c => c.id === vehicle?.clientId);
+    const vehicle = vehicles.find((v) => v.id === vehicleId);
+    const client = clients.find((c) => c.id === vehicle?.clientId);
 
     if (!vehicle || !client) return;
 
     // AUTO-PAUSE: Check if another timer is running
-    const runningTask = tasks.find(t => t.status === 'in-progress');
+    const runningTask = tasks.find((t) => t.status === "in-progress");
     const taskUpdates: Array<{ id: string; updates: Partial<Task> }> = [];
-    
+
     if (runningTask && runningTask.vehicleId !== vehicleId && runningTask.startTime) {
       // Calculate elapsed time for the running task
       const elapsed = Math.floor((Date.now() - runningTask.startTime.getTime()) / 1000);
-      
+
       // Create period for the auto-paused task
       const autoPeriod: WorkPeriod = {
         id: crypto.randomUUID(),
@@ -93,7 +90,7 @@ const Index = () => {
       // Add period to the active session
       const updatedSessions = [...runningTask.sessions];
       if (runningTask.activeSessionId) {
-        const activeSession = updatedSessions.find(s => s.id === runningTask.activeSessionId);
+        const activeSession = updatedSessions.find((s) => s.id === runningTask.activeSessionId);
         if (activeSession) {
           activeSession.periods.push(autoPeriod);
         }
@@ -103,23 +100,23 @@ const Index = () => {
       taskUpdates.push({
         id: runningTask.id,
         updates: {
-          status: 'paused',
+          status: "paused",
           sessions: updatedSessions,
           totalTime: runningTask.totalTime + elapsed,
           startTime: undefined,
-        }
+        },
       });
 
-      const pausedVehicle = vehicles.find(v => v.id === runningTask.vehicleId);
-      toast({ 
-        title: 'Timer Auto-Paused', 
-        description: `${pausedVehicle?.make} ${pausedVehicle?.model} paused automatically` 
+      const pausedVehicle = vehicles.find((v) => v.id === runningTask.vehicleId);
+      toast({
+        title: "Timer Auto-Paused",
+        description: `${pausedVehicle?.make} ${pausedVehicle?.model} paused automatically`,
       });
     }
 
     // Find existing task for this vehicle
     const existingTask = tasks.find(
-      t => t.vehicleId === vehicleId && ['pending', 'in-progress', 'paused'].includes(t.status)
+      (t) => t.vehicleId === vehicleId && ["pending", "in-progress", "paused"].includes(t.status),
     );
 
     if (existingTask) {
@@ -143,16 +140,16 @@ const Index = () => {
       taskUpdates.push({
         id: existingTask.id,
         updates: {
-          status: 'in-progress',
+          status: "in-progress",
           startTime: new Date(),
           sessions: updatedSessions,
           activeSessionId,
-        }
+        },
       });
 
       // Apply all updates atomically
       batchUpdateTasks(taskUpdates);
-      toast({ title: existingTask.status === 'paused' ? 'Timer Resumed' : 'Timer Started' });
+      toast({ title: existingTask.status === "paused" ? "Timer Resumed" : "Timer Started" });
     } else {
       // Create new task with new session
       const newSession: WorkSession = {
@@ -168,7 +165,7 @@ const Index = () => {
         vehicleId: vehicle.id,
         customerName: client.name,
         carVin: vehicle.vin,
-        status: 'in-progress',
+        status: "in-progress",
         totalTime: 0,
         needsFollowUp: false,
         sessions: [newSession],
@@ -176,22 +173,22 @@ const Index = () => {
         startTime: new Date(),
         activeSessionId: newSession.id,
       };
-      
+
       // Apply auto-pause updates first if any, then add new task
       if (taskUpdates.length > 0) {
         batchUpdateTasks(taskUpdates);
       }
       addTask(newTask);
-      toast({ title: 'Timer Started' });
+      toast({ title: "Timer Started" });
     }
   };
 
   const handlePauseTimer = () => {
-    const activeTask = tasks.find(t => t.status === 'in-progress');
+    const activeTask = tasks.find((t) => t.status === "in-progress");
     if (!activeTask || !activeTask.startTime) return;
 
     const elapsed = Math.floor((Date.now() - activeTask.startTime.getTime()) / 1000);
-    
+
     // Create period for this pause
     const period: WorkPeriod = {
       id: crypto.randomUUID(),
@@ -203,7 +200,7 @@ const Index = () => {
     // Add period to the active session (create one if missing)
     let updatedSessions = [...(activeTask.sessions || [])];
     let activeSessionId = activeTask.activeSessionId;
-    
+
     if (!activeSessionId) {
       // Create new session if missing
       const newSession: WorkSession = {
@@ -215,31 +212,31 @@ const Index = () => {
       updatedSessions.push(newSession);
       activeSessionId = newSession.id;
     }
-    
-    const activeSession = updatedSessions.find(s => s.id === activeSessionId);
+
+    const activeSession = updatedSessions.find((s) => s.id === activeSessionId);
     if (activeSession) {
       activeSession.periods = [...(activeSession.periods || []), period];
     }
 
     updateTask(activeTask.id, {
-      status: 'paused',
+      status: "paused",
       sessions: updatedSessions,
       totalTime: activeTask.totalTime + elapsed,
       startTime: undefined,
       activeSessionId,
     });
-    toast({ title: 'Timer Paused' });
+    toast({ title: "Timer Paused" });
   };
 
   const handleStopTimer = (taskId: string) => {
-    const activeTask = tasks.find(t => t.id === taskId);
+    const activeTask = tasks.find((t) => t.id === taskId);
     if (!activeTask) return;
     setStoppingTaskId(taskId);
 
     // If timer is running, create final period
-    if (activeTask.status === 'in-progress' && activeTask.startTime) {
+    if (activeTask.status === "in-progress" && activeTask.startTime) {
       const elapsed = Math.floor((Date.now() - activeTask.startTime.getTime()) / 1000);
-      
+
       const finalPeriod: WorkPeriod = {
         id: crypto.randomUUID(),
         startTime: activeTask.startTime,
@@ -250,7 +247,7 @@ const Index = () => {
       // Add period to the active session (create one if missing)
       let updatedSessions = [...(activeTask.sessions || [])];
       let activeSessionId = activeTask.activeSessionId;
-      
+
       if (!activeSessionId) {
         // Create new session if missing
         const newSession: WorkSession = {
@@ -262,14 +259,14 @@ const Index = () => {
         updatedSessions.push(newSession);
         activeSessionId = newSession.id;
       }
-      
-      const activeSession = updatedSessions.find(s => s.id === activeSessionId);
+
+      const activeSession = updatedSessions.find((s) => s.id === activeSessionId);
       if (activeSession) {
         activeSession.periods = [...(activeSession.periods || []), finalPeriod];
       }
 
       updateTask(activeTask.id, {
-        status: 'paused',
+        status: "paused",
         sessions: updatedSessions,
         totalTime: activeTask.totalTime + elapsed,
         startTime: undefined,
@@ -280,16 +277,27 @@ const Index = () => {
     setShowCompleteWork(true);
   };
 
-  const handleCompleteWork = (description: string, parts: Part[], needsFollowUp: boolean, chargeMinimumHour: boolean = false, isCloning: boolean = false, isProgramming: boolean = false, isAddKey: boolean = false, isAllKeysLost: boolean = false) => {
-    const activeTask = stoppingTaskId ? tasks.find(t => t.id === stoppingTaskId) : tasks.find(t => t.status === 'in-progress' || t.status === 'paused');
+  const handleCompleteWork = (
+    description: string,
+    parts: Part[],
+    needsFollowUp: boolean,
+    chargeMinimumHour: boolean = false,
+    isCloning: boolean = false,
+    isProgramming: boolean = false,
+    isAddKey: boolean = false,
+    isAllKeysLost: boolean = false,
+  ) => {
+    const activeTask = stoppingTaskId
+      ? tasks.find((t) => t.id === stoppingTaskId)
+      : tasks.find((t) => t.status === "in-progress" || t.status === "paused");
     if (!activeTask) return;
 
     // Update the active session with description and parts
     const updatedSessions = [...(activeTask.sessions || [])];
-    let targetSession = activeTask.activeSessionId 
-      ? updatedSessions.find(s => s.id === activeTask.activeSessionId)
-      : updatedSessions.find(s => s.periods && s.periods.length > 0);
-    
+    let targetSession = activeTask.activeSessionId
+      ? updatedSessions.find((s) => s.id === activeTask.activeSessionId)
+      : updatedSessions.find((s) => s.periods && s.periods.length > 0);
+
     if (targetSession) {
       targetSession.description = description;
       targetSession.parts = parts;
@@ -302,7 +310,7 @@ const Index = () => {
     }
 
     updateTask(activeTask.id, {
-      status: 'completed',
+      status: "completed",
       sessions: updatedSessions,
       startTime: undefined,
       activeSessionId: undefined,
@@ -311,40 +319,59 @@ const Index = () => {
 
     setShowCompleteWork(false);
     setStoppingTaskId(null);
-    toast({ 
-      title: 'Work Completed',
-      description: needsFollowUp ? 'Task completed - more work needed' : 'Work session finished successfully',
+    toast({
+      title: "Work Completed",
+      description: needsFollowUp ? "Task completed - more work needed" : "Work session finished successfully",
     });
 
     // Background cloud sync
-    const client = clients.find(c => c.id === activeTask.clientId);
+    const client = clients.find((c) => c.id === activeTask.clientId);
     if (client) {
-      const updatedTasks = tasks.map(t =>
+      const updatedTasks = tasks.map((t) =>
         t.id === activeTask.id
-          ? { ...t, status: 'completed' as const, sessions: updatedSessions, needsFollowUp, startTime: undefined, activeSessionId: undefined }
-          : t
+          ? {
+              ...t,
+              status: "completed" as const,
+              sessions: updatedSessions,
+              needsFollowUp,
+              startTime: undefined,
+              activeSessionId: undefined,
+            }
+          : t,
       );
-      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods)
-        .then(result => {
+      syncPortalToCloud(
+        client,
+        vehicles,
+        updatedTasks,
+        settings.defaultHourlyRate,
+        settings.defaultCloningRate,
+        settings.defaultProgrammingRate,
+        settings.defaultAddKeyRate,
+        settings.defaultAllKeysLostRate,
+        settings.paymentLink,
+        settings.paymentLabel,
+        settings.paymentMethods,
+      )
+        .then((result) => {
           if (!client.portalId) {
             updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
           }
         })
-        .catch(err => console.warn('[CloudSync] Portal sync failed:', err));
+        .catch((err) => console.warn("[CloudSync] Portal sync failed:", err));
     }
   };
 
   const handleRestartTimer = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const taskUpdates: Array<{ id: string; updates: Partial<Task> }> = [];
 
     // Auto-pause any other running task
-    const runningTask = tasks.find(t => t.status === 'in-progress' && t.id !== taskId);
+    const runningTask = tasks.find((t) => t.status === "in-progress" && t.id !== taskId);
     if (runningTask && runningTask.startTime) {
       const elapsed = Math.floor((Date.now() - runningTask.startTime.getTime()) / 1000);
-      
+
       const autoPeriod: WorkPeriod = {
         id: crypto.randomUUID(),
         startTime: runningTask.startTime,
@@ -354,7 +381,7 @@ const Index = () => {
 
       let updatedSessions = [...(runningTask.sessions || [])];
       let activeSessionId = runningTask.activeSessionId;
-      
+
       if (!activeSessionId) {
         const newSession: WorkSession = {
           id: crypto.randomUUID(),
@@ -365,8 +392,8 @@ const Index = () => {
         updatedSessions.push(newSession);
         activeSessionId = newSession.id;
       }
-      
-      const activeSession = updatedSessions.find(s => s.id === activeSessionId);
+
+      const activeSession = updatedSessions.find((s) => s.id === activeSessionId);
       if (activeSession) {
         activeSession.periods = [...(activeSession.periods || []), autoPeriod];
       }
@@ -375,18 +402,18 @@ const Index = () => {
       taskUpdates.push({
         id: runningTask.id,
         updates: {
-          status: 'paused',
+          status: "paused",
           sessions: updatedSessions,
           totalTime: runningTask.totalTime + elapsed,
           startTime: undefined,
           activeSessionId,
-        }
+        },
       });
 
-      const pausedVehicle = vehicles.find(v => v.id === runningTask.vehicleId);
-      toast({ 
-        title: 'Timer Auto-Paused', 
-        description: `${pausedVehicle?.make} ${pausedVehicle?.model} paused automatically` 
+      const pausedVehicle = vehicles.find((v) => v.id === runningTask.vehicleId);
+      toast({
+        title: "Timer Auto-Paused",
+        description: `${pausedVehicle?.make} ${pausedVehicle?.model} paused automatically`,
       });
     }
 
@@ -409,53 +436,73 @@ const Index = () => {
     taskUpdates.push({
       id: taskId,
       updates: {
-        status: 'in-progress',
+        status: "in-progress",
         startTime: new Date(),
         sessions: updatedSessions,
         activeSessionId,
-      }
+      },
     });
 
     // Apply all updates atomically
     batchUpdateTasks(taskUpdates);
-    toast({ title: task.status === 'paused' ? 'Timer Resumed' : 'Timer Started' });
+    toast({ title: task.status === "paused" ? "Timer Resumed" : "Timer Started" });
   };
 
   const handleMarkBilled = (taskId: string) => {
-    updateTask(taskId, { status: 'billed' });
-    toast({ title: 'Task Marked as Billed' });
+    updateTask(taskId, { status: "billed" });
+    toast({ title: "Task Marked as Billed" });
 
     // Sync portal so client sees updated status immediately
-    const task = tasks.find(t => t.id === taskId);
-    const client = task ? clients.find(c => c.id === task.clientId) : null;
+    const task = tasks.find((t) => t.id === taskId);
+    const client = task ? clients.find((c) => c.id === task.clientId) : null;
     if (client) {
-      const updatedTasks = tasks.map(t =>
-        t.id === taskId ? { ...t, status: 'billed' as const } : t
-      );
-      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods)
-        .then(result => {
+      const updatedTasks = tasks.map((t) => (t.id === taskId ? { ...t, status: "billed" as const } : t));
+      syncPortalToCloud(
+        client,
+        vehicles,
+        updatedTasks,
+        settings.defaultHourlyRate,
+        settings.defaultCloningRate,
+        settings.defaultProgrammingRate,
+        settings.defaultAddKeyRate,
+        settings.defaultAllKeysLostRate,
+        settings.paymentLink,
+        settings.paymentLabel,
+        settings.paymentMethods,
+      )
+        .then((result) => {
           if (!client.portalId) updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
         })
-        .catch(err => console.warn('[CloudSync] Portal sync failed:', err));
+        .catch((err) => console.warn("[CloudSync] Portal sync failed:", err));
     }
   };
 
   const handleMarkPaid = (taskId: string) => {
-    updateTask(taskId, { status: 'paid' });
-    toast({ title: 'Payment Recorded' });
+    updateTask(taskId, { status: "paid" });
+    toast({ title: "Payment Recorded" });
 
     // Sync portal so client sees updated status immediately
-    const task = tasks.find(t => t.id === taskId);
-    const client = task ? clients.find(c => c.id === task.clientId) : null;
+    const task = tasks.find((t) => t.id === taskId);
+    const client = task ? clients.find((c) => c.id === task.clientId) : null;
     if (client) {
-      const updatedTasks = tasks.map(t =>
-        t.id === taskId ? { ...t, status: 'paid' as const } : t
-      );
-      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods)
-        .then(result => {
+      const updatedTasks = tasks.map((t) => (t.id === taskId ? { ...t, status: "paid" as const } : t));
+      syncPortalToCloud(
+        client,
+        vehicles,
+        updatedTasks,
+        settings.defaultHourlyRate,
+        settings.defaultCloningRate,
+        settings.defaultProgrammingRate,
+        settings.defaultAddKeyRate,
+        settings.defaultAllKeysLostRate,
+        settings.paymentLink,
+        settings.paymentLabel,
+        settings.paymentMethods,
+      )
+        .then((result) => {
           if (!client.portalId) updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
         })
-        .catch(err => console.warn('[CloudSync] Portal sync failed:', err));
+        .catch((err) => console.warn("[CloudSync] Portal sync failed:", err));
     }
   };
 
@@ -463,35 +510,31 @@ const Index = () => {
     // Delete photos from filesystem before deleting task
     await photoStorageService.deleteAllPhotosForTask(taskId);
     await deleteTask(taskId);
-    toast({ title: 'Task Deleted' });
+    toast({ title: "Task Deleted" });
   };
 
-  const handleAddClient = (clientData: Omit<Client, 'id' | 'createdAt'>) => {
+  const handleAddClient = (clientData: Omit<Client, "id" | "createdAt">) => {
     const newClient: Client = {
       ...clientData,
       id: crypto.randomUUID(),
       createdAt: new Date(),
     };
     addClient(newClient);
-    toast({ title: 'Client Added' });
+    toast({ title: "Client Added" });
   };
 
-  const handleAddVehicle = async (
-    vehicleData: Omit<Vehicle, 'id'>, 
-    clientName?: string,
-    phoneContact?: any
-  ) => {
+  const handleAddVehicle = async (vehicleData: Omit<Vehicle, "id">, clientName?: string, phoneContact?: any) => {
     try {
       let finalClientId = vehicleData.clientId;
       let clientForTask: Client | undefined;
 
       // Auto-create client if clientName is provided
-      if (clientName && vehicleData.clientId === 'pending') {
+      if (clientName && vehicleData.clientId === "pending") {
         // Extract best phone number as string (not the PhoneNumber object)
-        const bestPhone = phoneContact?.phoneNumbers 
-          ? contactsService.getBestPhoneNumber(phoneContact.phoneNumbers) 
+        const bestPhone = phoneContact?.phoneNumbers
+          ? contactsService.getBestPhoneNumber(phoneContact.phoneNumbers)
           : null;
-        
+
         const newClient: Client = {
           id: crypto.randomUUID(),
           name: clientName,
@@ -502,9 +545,9 @@ const Index = () => {
         await addClient(newClient);
         finalClientId = newClient.id;
         clientForTask = newClient;
-        toast({ title: 'Client Created', description: `${clientName} has been added` });
+        toast({ title: "Client Created", description: `${clientName} has been added` });
       } else {
-        clientForTask = clients.find(c => c.id === finalClientId);
+        clientForTask = clients.find((c) => c.id === finalClientId);
       }
 
       const newVehicle: Vehicle = {
@@ -519,9 +562,9 @@ const Index = () => {
         id: crypto.randomUUID(),
         clientId: finalClientId,
         vehicleId: newVehicle.id,
-        customerName: clientForTask?.name || clientName || 'Unknown',
+        customerName: clientForTask?.name || clientName || "Unknown",
         carVin: newVehicle.vin,
-        status: 'pending',
+        status: "pending",
         totalTime: 0,
         needsFollowUp: false,
         sessions: [],
@@ -529,13 +572,13 @@ const Index = () => {
       };
       await addTask(newTask);
 
-      toast({ title: 'Vehicle Added', description: 'Ready to start work' });
+      toast({ title: "Vehicle Added", description: "Ready to start work" });
     } catch (error) {
-      console.error('Failed to add vehicle:', error);
-      toast({ 
-        title: 'Error', 
-        description: 'Failed to save vehicle. Please try again.',
-        variant: 'destructive'
+      console.error("Failed to add vehicle:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save vehicle. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -545,31 +588,29 @@ const Index = () => {
   };
 
   const handleDeleteClient = (id: string) => {
-    const clientTasks = tasks.filter(t => t.clientId === id);
-    const hasActiveTasks = clientTasks.some(t =>
-      ['pending', 'in-progress', 'paused'].includes(t.status)
-    );
+    const clientTasks = tasks.filter((t) => t.clientId === id);
+    const hasActiveTasks = clientTasks.some((t) => ["pending", "in-progress", "paused"].includes(t.status));
 
     if (hasActiveTasks) {
       toast({
-        title: 'Cannot Delete Client',
-        description: 'Client has active tasks. Complete them first.',
-        variant: 'destructive',
+        title: "Cannot Delete Client",
+        description: "Client has active tasks. Complete them first.",
+        variant: "destructive",
       });
       return;
     }
 
     // Delete client vehicles
-    const clientVehicles = vehicles.filter(v => v.clientId === id);
-    clientVehicles.forEach(v => deleteVehicle(v.id));
+    const clientVehicles = vehicles.filter((v) => v.clientId === id);
+    clientVehicles.forEach((v) => deleteVehicle(v.id));
 
     // Delete client tasks
-    clientTasks.forEach(t => deleteTask(t.id));
+    clientTasks.forEach((t) => deleteTask(t.id));
 
     // Delete client
     deleteClient(id);
 
-    toast({ title: 'Client Deleted' });
+    toast({ title: "Client Deleted" });
   };
 
   const handleUpdateVehicle = (id: string, updates: Partial<Vehicle>) => {
@@ -577,63 +618,64 @@ const Index = () => {
 
     // Update related tasks if VIN changed
     if (updates.vin) {
-      const vehicleTasks = tasks.filter(t => t.vehicleId === id);
-      vehicleTasks.forEach(t => updateTask(t.id, { carVin: updates.vin! }));
+      const vehicleTasks = tasks.filter((t) => t.vehicleId === id);
+      vehicleTasks.forEach((t) => updateTask(t.id, { carVin: updates.vin! }));
     }
 
-    toast({ title: 'Vehicle Updated' });
+    toast({ title: "Vehicle Updated" });
   };
 
   const handleDeleteVehicle = (id: string) => {
-    const vehicleTasks = tasks.filter(t => t.vehicleId === id);
-    const hasActiveTasks = vehicleTasks.some(t =>
-      ['pending', 'in-progress', 'paused'].includes(t.status)
-    );
+    const vehicleTasks = tasks.filter((t) => t.vehicleId === id);
+    const hasActiveTasks = vehicleTasks.some((t) => ["pending", "in-progress", "paused"].includes(t.status));
 
     if (hasActiveTasks) {
       toast({
-        title: 'Cannot Delete Vehicle',
-        description: 'Vehicle has active tasks. Complete them first.',
-        variant: 'destructive',
+        title: "Cannot Delete Vehicle",
+        description: "Vehicle has active tasks. Complete them first.",
+        variant: "destructive",
       });
       return;
     }
 
     // Delete vehicle tasks
-    vehicleTasks.forEach(t => deleteTask(t.id));
+    vehicleTasks.forEach((t) => deleteTask(t.id));
 
     // Delete vehicle
     deleteVehicle(id);
 
-    toast({ title: 'Vehicle Deleted' });
+    toast({ title: "Vehicle Deleted" });
   };
 
   const handleMoveVehicle = (vehicleId: string, newClientId: string) => {
-    const newClient = clients.find(c => c.id === newClientId);
+    const newClient = clients.find((c) => c.id === newClientId);
     if (!newClient) return;
 
     // Update vehicle's clientId
     updateVehicle(vehicleId, { clientId: newClientId });
 
     // Update all tasks for this vehicle
-    const vehicleTasks = tasks.filter(t => t.vehicleId === vehicleId);
-    vehicleTasks.forEach(t => {
+    const vehicleTasks = tasks.filter((t) => t.vehicleId === vehicleId);
+    vehicleTasks.forEach((t) => {
       updateTask(t.id, { clientId: newClientId, customerName: newClient.name });
     });
   };
 
-  const activeTasks = tasks.filter(t => ['pending', 'in-progress', 'paused'].includes(t.status));
-  const completedTasks = tasks.filter(t => t.status === 'completed');
+  const activeTasks = tasks.filter((t) => ["pending", "in-progress", "paused"].includes(t.status));
+  const completedTasks = tasks.filter((t) => t.status === "completed");
 
   // Group tasks by client
   const groupTasksByClient = (taskList: Task[]) => {
-    return taskList.reduce((acc, task) => {
-      if (!acc[task.clientId]) {
-        acc[task.clientId] = [];
-      }
-      acc[task.clientId].push(task);
-      return acc;
-    }, {} as Record<string, Task[]>);
+    return taskList.reduce(
+      (acc, task) => {
+        if (!acc[task.clientId]) {
+          acc[task.clientId] = [];
+        }
+        acc[task.clientId].push(task);
+        return acc;
+      },
+      {} as Record<string, Task[]>,
+    );
   };
 
   const activeTasksByClient = groupTasksByClient(activeTasks);
@@ -643,7 +685,7 @@ const Index = () => {
     <div className="h-dvh overflow-y-auto bg-background">
       <header className="border-b bg-primary/20 backdrop-blur-sm shadow-md sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-primary">Auto-Tracker</h1>
+          <h1 className="text-lg font-bold text-primary">ChipTime</h1>
           <div className="flex items-center gap-2">
             <CloudSyncIndicator onClick={() => setShowSettings(true)} />
             <Button variant="default" size="icon" onClick={() => setShowAddVehicle(true)} className="h-8 w-8">
@@ -666,60 +708,51 @@ const Index = () => {
           <TabsContent value="active" className="space-y-4 mt-4">
             {Object.keys(activeTasksByClient).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <p className="text-3xl mb-2">🔧</p>
-                <p className="font-semibold">No active jobs</p>
-                <p className="text-sm mt-1">Tap + to add a vehicle</p>
+                <p>No active tasks. Start a timer to begin tracking work.</p>
               </div>
             ) : (
               Object.entries(activeTasksByClient).map(([clientId, clientTasks]) => {
-                const client = clients.find(c => c.id === clientId);
-                const hasRunningTimer = clientTasks.some(t => t.status === 'in-progress');
+                const client = clients.find((c) => c.id === clientId);
                 return (
-                  <div key={clientId} className={`rounded-xl overflow-hidden border ${hasRunningTimer ? 'border-blue-500 border-2' : 'border-border'}`}>
-                    <div className="px-4 py-2.5 bg-muted/50 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold flex items-center gap-2">
-                          {client?.name || 'Unknown Client'}
-                          {hasRunningTimer && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                              </span>
-                              Live
-                            </span>
-                          )}
-                        </h2>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {client?.phone && <span>{client.phone}</span>}
-                          <span>({vehicles.filter(v => v.clientId === clientId).length} vehicle{vehicles.filter(v => v.clientId === clientId).length !== 1 ? 's' : ''})</span>
-                        </div>
-                      </div>
+                  <div key={clientId} className="rounded-lg p-4 bg-muted/30 space-y-3">
+                    <div className="mb-3">
+                      <h2 className="text-xl font-bold">
+                        {client?.name || "Unknown Client"}
+                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                          ({vehicles.filter((v) => v.clientId === clientId).length} vehicle
+                          {vehicles.filter((v) => v.clientId === clientId).length !== 1 ? "s" : ""})
+                        </span>
+                      </h2>
+                      {client?.phone && <p className="text-xs text-muted-foreground">{client.phone}</p>}
                     </div>
-                    <div className="p-3 space-y-3">
-                      {clientTasks.map(task => {
-                        const vehicle = vehicles.find(v => v.id === task.vehicleId);
-                        const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
-                        return (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            client={client}
-                            vehicle={vehicle}
-                            settings={settings}
-                            onMarkBilled={handleMarkBilled}
-                            onMarkPaid={handleMarkPaid}
-                            onRestartTimer={handleRestartTimer}
-                            onPauseTimer={task.status === 'in-progress' ? handlePauseTimer : undefined}
-                            onStopTimer={task.status === 'in-progress' || task.status === 'paused' ? () => handleStopTimer(task.id) : undefined}
-                            onUpdateTask={async (updatedTask) => { await updateTask(updatedTask.id, updatedTask); }}
-                            onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
-                            onDelete={handleDelete}
-                            vehicleColorScheme={colorScheme}
-                          />
-                        );
-                      })}
-                    </div>
+                    {clientTasks.map((task) => {
+                      const vehicle = vehicles.find((v) => v.id === task.vehicleId);
+                      const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          client={client}
+                          vehicle={vehicle}
+                          settings={settings}
+                          onMarkBilled={handleMarkBilled}
+                          onMarkPaid={handleMarkPaid}
+                          onRestartTimer={handleRestartTimer}
+                          onPauseTimer={task.status === "in-progress" ? handlePauseTimer : undefined}
+                          onStopTimer={
+                            task.status === "in-progress" || task.status === "paused"
+                              ? () => handleStopTimer(task.id)
+                              : undefined
+                          }
+                          onUpdateTask={async (updatedTask) => {
+                            await updateTask(updatedTask.id, updatedTask);
+                          }}
+                          onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
+                          onDelete={handleDelete}
+                          vehicleColorScheme={colorScheme}
+                        />
+                      );
+                    })}
                   </div>
                 );
               })
@@ -729,43 +762,45 @@ const Index = () => {
           <TabsContent value="completed" className="space-y-4 mt-4">
             {Object.keys(completedTasksByClient).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <p className="text-3xl mb-2">✅</p>
-                <p className="font-semibold">No completed jobs yet</p>
+                <p>No completed tasks yet.</p>
               </div>
             ) : (
               Object.entries(completedTasksByClient).map(([clientId, clientTasks]) => {
-                const client = clients.find(c => c.id === clientId);
+                const client = clients.find((c) => c.id === clientId);
                 return (
-                  <div key={clientId} className="rounded-xl overflow-hidden border border-border">
-                    <div className="px-4 py-2.5 bg-muted/50">
-                      <h2 className="text-lg font-bold">{client?.name || 'Unknown Client'}</h2>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {client?.phone && <span>{client.phone}</span>}
-                        <span>({vehicles.filter(v => v.clientId === clientId).length} vehicle{vehicles.filter(v => v.clientId === clientId).length !== 1 ? 's' : ''})</span>
-                      </div>
+                  <div key={clientId} className="rounded-lg p-4 bg-muted/30 space-y-3">
+                    <div className="mb-3">
+                      <h2 className="text-xl font-bold">
+                        {client?.name || "Unknown Client"}
+                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                          ({vehicles.filter((v) => v.clientId === clientId).length} vehicle
+                          {vehicles.filter((v) => v.clientId === clientId).length !== 1 ? "s" : ""})
+                        </span>
+                      </h2>
+                      {client?.phone && <p className="text-xs text-muted-foreground">{client.phone}</p>}
                     </div>
-                    <div className="p-3 space-y-3">
-                      {clientTasks.map(task => {
-                        const vehicle = vehicles.find(v => v.id === task.vehicleId);
-                        const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
-                        return (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            client={client}
-                            vehicle={vehicle}
-                            settings={settings}
-                            onMarkBilled={handleMarkBilled}
-                            onMarkPaid={handleMarkPaid}
-                            onRestartTimer={handleRestartTimer}
-                            onUpdateTask={async (updatedTask) => { await updateTask(updatedTask.id, updatedTask); }}
-                            onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
-                            onDelete={handleDelete}
-                            vehicleColorScheme={colorScheme}
-                          />
-                        );
-                      })}
-                    </div>
+                    {clientTasks.map((task) => {
+                      const vehicle = vehicles.find((v) => v.id === task.vehicleId);
+                      const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          client={client}
+                          vehicle={vehicle}
+                          settings={settings}
+                          onMarkBilled={handleMarkBilled}
+                          onMarkPaid={handleMarkPaid}
+                          onRestartTimer={handleRestartTimer}
+                          onUpdateTask={async (updatedTask) => {
+                            await updateTask(updatedTask.id, updatedTask);
+                          }}
+                          onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
+                          onDelete={handleDelete}
+                          vehicleColorScheme={colorScheme}
+                        />
+                      );
+                    })}
                   </div>
                 );
               })
@@ -787,23 +822,22 @@ const Index = () => {
         onSave={handleAddVehicle}
       />
 
-      <AddClientDialog
-        open={showAddClient}
-        onOpenChange={setShowAddClient}
-        onSave={handleAddClient}
-      />
+      <AddClientDialog open={showAddClient} onOpenChange={setShowAddClient} onSave={handleAddClient} />
 
       <CompleteWorkDialog
         open={showCompleteWork}
-        onOpenChange={(open) => { setShowCompleteWork(open); if (!open) setStoppingTaskId(null); }}
+        onOpenChange={(open) => {
+          setShowCompleteWork(open);
+          if (!open) setStoppingTaskId(null);
+        }}
         onComplete={handleCompleteWork}
         vehicleLabel={(() => {
           if (!stoppingTaskId) return undefined;
-          const t = tasks.find(tk => tk.id === stoppingTaskId);
+          const t = tasks.find((tk) => tk.id === stoppingTaskId);
           if (!t) return undefined;
-          const v = vehicles.find(vh => vh.id === t.vehicleId);
+          const v = vehicles.find((vh) => vh.id === t.vehicleId);
           if (!v) return undefined;
-          return [v.year, v.make, v.model].filter(Boolean).join(' ');
+          return [v.year, v.make, v.model].filter(Boolean).join(" ");
         })()}
       />
 
@@ -818,7 +852,9 @@ const Index = () => {
         onMarkBilled={handleMarkBilled}
         onMarkPaid={handleMarkPaid}
         onRestartTimer={handleRestartTimer}
-        onUpdateTask={async (updatedTask) => { await updateTask(updatedTask.id, updatedTask); }}
+        onUpdateTask={async (updatedTask) => {
+          await updateTask(updatedTask.id, updatedTask);
+        }}
         onDelete={handleDelete}
         onUpdateClient={handleUpdateClient}
         onDeleteClient={handleDeleteClient}
