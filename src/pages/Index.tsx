@@ -14,7 +14,7 @@ import { Task, WorkSession, WorkPeriod, Part, Client, Vehicle } from "@/types";
 import { useNotifications } from "@/hooks/useNotifications";
 import { migrateToCapacitorStorage } from "@/lib/storageMigration";
 import { migratePhotosToFilesystem } from "@/lib/photoMigration";
-import { photoStorageService } from "@/servihces/photoStorageService";
+import { photoStorageService } from "import { photoStorageService } from '@/services/photoStorageService';";
 import { getVehicleColorScheme } from "@/lib/vehicleColors";
 import { contactsService } from "@/services/contactsService";
 import { syncPortalToCloud } from "@/lib/clientPortalUtils";
