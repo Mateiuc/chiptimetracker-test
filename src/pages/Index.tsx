@@ -729,42 +729,43 @@ const Index = () => {
           <TabsContent value="completed" className="space-y-4 mt-4">
             {Object.keys(completedTasksByClient).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <p>No completed tasks yet.</p>
+                <p className="text-3xl mb-2">✅</p>
+                <p className="font-semibold">No completed jobs yet</p>
               </div>
             ) : (
               Object.entries(completedTasksByClient).map(([clientId, clientTasks]) => {
                 const client = clients.find(c => c.id === clientId);
                 return (
-                  <div key={clientId} className="rounded-lg p-4 bg-muted/30 space-y-3">
-                    <div className="mb-3">
-                      <h2 className="text-xl font-bold">
-                        {client?.name || 'Unknown Client'} 
-                        <span className="text-sm font-normal text-muted-foreground ml-2">
-                          ({vehicles.filter(v => v.clientId === clientId).length} vehicle{vehicles.filter(v => v.clientId === clientId).length !== 1 ? 's' : ''})
-                        </span>
-                      </h2>
-                      {client?.phone && <p className="text-xs text-muted-foreground">{client.phone}</p>}
+                  <div key={clientId} className="rounded-xl overflow-hidden border border-border">
+                    <div className="px-4 py-2.5 bg-muted/50">
+                      <h2 className="text-lg font-bold">{client?.name || 'Unknown Client'}</h2>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {client?.phone && <span>{client.phone}</span>}
+                        <span>({vehicles.filter(v => v.clientId === clientId).length} vehicle{vehicles.filter(v => v.clientId === clientId).length !== 1 ? 's' : ''})</span>
+                      </div>
                     </div>
-                    {clientTasks.map(task => {
-                      const vehicle = vehicles.find(v => v.id === task.vehicleId);
-                      const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
-                      return (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          client={client}
-                          vehicle={vehicle}
-                          settings={settings}
-                          onMarkBilled={handleMarkBilled}
-                          onMarkPaid={handleMarkPaid}
-                          onRestartTimer={handleRestartTimer}
-                        onUpdateTask={async (updatedTask) => { await updateTask(updatedTask.id, updatedTask); }}
-                          onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
-                          onDelete={handleDelete}
-                          vehicleColorScheme={colorScheme}
-                        />
-                      );
-                    })}
+                    <div className="p-3 space-y-3">
+                      {clientTasks.map(task => {
+                        const vehicle = vehicles.find(v => v.id === task.vehicleId);
+                        const colorScheme = getVehicleColorScheme(vehicle?.id || task.vehicleId);
+                        return (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            client={client}
+                            vehicle={vehicle}
+                            settings={settings}
+                            onMarkBilled={handleMarkBilled}
+                            onMarkPaid={handleMarkPaid}
+                            onRestartTimer={handleRestartTimer}
+                            onUpdateTask={async (updatedTask) => { await updateTask(updatedTask.id, updatedTask); }}
+                            onUpdateVehicle={(vid, updates) => updateVehicle(vid, updates)}
+                            onDelete={handleDelete}
+                            vehicleColorScheme={colorScheme}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })
