@@ -1293,7 +1293,34 @@ export const TaskCard = ({
     return total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0);
   }, 0);
   const totalCost = laborCost + partsCost;
+  const statusStripColor = {
+    'in-progress': 'bg-blue-500',
+    'paused': 'bg-orange-500',
+    'pending': 'bg-yellow-500',
+    'completed': 'bg-green-500',
+    'billed': 'bg-purple-500',
+    'paid': 'bg-emerald-500',
+  }[task.status] || 'bg-muted';
+  const statusLabel = {
+    'in-progress': 'In Progress',
+    'paused': 'Paused',
+    'pending': 'Pending',
+    'completed': 'Completed',
+    'billed': 'Billed',
+    'paid': 'Paid',
+  }[task.status] || task.status;
+
   return <Card className={`overflow-hidden transition-all hover:shadow-md ${colorScheme.card} border ${colorScheme.border}`}>
+      <div className={`${statusStripColor} px-3 py-1 flex items-center gap-2 text-white text-[10px] font-semibold`}>
+        {task.status === 'in-progress' && (
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          </span>
+        )}
+        <span>{statusLabel}</span>
+        {task.needsFollowUp && <span className="ml-auto">⚑ Follow-up</span>}
+      </div>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="p-3 py-0">
           <div className="flex items-start justify-between mb-2">
@@ -1336,6 +1363,10 @@ export const TaskCard = ({
                         <FileText className="h-4 w-4 mr-2" />
                         Generate Bill & Mark Billed
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onMarkPaid(task.id)}>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Paid
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onRestartTimer(task.id)}>
                         <Play className="h-4 w-4 mr-2" />
                         Resume Work
@@ -1348,7 +1379,7 @@ export const TaskCard = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onMarkPaid(task.id)}>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Payed
+                      Paid
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => setShowDeleteDialog(true)}
@@ -1483,11 +1514,13 @@ export const TaskCard = ({
                     <div className="text-xs font-semibold mb-1">
                       Session {sessionIndex + 1} ({formatDuration(sessionDuration)})
                     </div>
-                    {(session.chargeMinimumHour || session.isCloning || session.isProgramming) && (
+                    {(session.chargeMinimumHour || session.isCloning || session.isProgramming || session.isAddKey || session.isAllKeysLost) && (
                       <div className="flex gap-1 mb-1 flex-wrap">
                         {session.chargeMinimumHour && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🚩 Min 1hr</Badge>}
                         {session.isCloning && <Badge variant="outline" className="text-[9px] px-1.5 py-0">📋 Cloning</Badge>}
                         {session.isProgramming && <Badge variant="outline" className="text-[9px] px-1.5 py-0">💻 Programming</Badge>}
+                        {session.isAddKey && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🔑 Add Key</Badge>}
+                        {session.isAllKeysLost && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🔐 All Keys Lost</Badge>}
                       </div>
                     )}
                     
