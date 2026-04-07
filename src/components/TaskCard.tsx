@@ -1514,11 +1514,13 @@ export const TaskCard = ({
                     <div className="text-xs font-semibold mb-1">
                       Session {sessionIndex + 1} ({formatDuration(sessionDuration)})
                     </div>
-                    {(session.chargeMinimumHour || session.isCloning || session.isProgramming) && (
+                    {(session.chargeMinimumHour || session.isCloning || session.isProgramming || session.isAddKey || session.isAllKeysLost) && (
                       <div className="flex gap-1 mb-1 flex-wrap">
                         {session.chargeMinimumHour && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🚩 Min 1hr</Badge>}
                         {session.isCloning && <Badge variant="outline" className="text-[9px] px-1.5 py-0">📋 Cloning</Badge>}
                         {session.isProgramming && <Badge variant="outline" className="text-[9px] px-1.5 py-0">💻 Programming</Badge>}
+                        {session.isAddKey && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🔑 Add Key</Badge>}
+                        {session.isAllKeysLost && <Badge variant="outline" className="text-[9px] px-1.5 py-0">🔐 All Keys Lost</Badge>}
                       </div>
                     )}
                     
