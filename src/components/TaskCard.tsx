@@ -1293,7 +1293,34 @@ export const TaskCard = ({
     return total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0);
   }, 0);
   const totalCost = laborCost + partsCost;
+  const statusStripColor = {
+    'in-progress': 'bg-blue-500',
+    'paused': 'bg-orange-500',
+    'pending': 'bg-yellow-500',
+    'completed': 'bg-green-500',
+    'billed': 'bg-purple-500',
+    'paid': 'bg-emerald-500',
+  }[task.status] || 'bg-muted';
+  const statusLabel = {
+    'in-progress': 'In Progress',
+    'paused': 'Paused',
+    'pending': 'Pending',
+    'completed': 'Completed',
+    'billed': 'Billed',
+    'paid': 'Paid',
+  }[task.status] || task.status;
+
   return <Card className={`overflow-hidden transition-all hover:shadow-md ${colorScheme.card} border ${colorScheme.border}`}>
+      <div className={`${statusStripColor} px-3 py-1 flex items-center gap-2 text-white text-[10px] font-semibold`}>
+        {task.status === 'in-progress' && (
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          </span>
+        )}
+        <span>{statusLabel}</span>
+        {task.needsFollowUp && <span className="ml-auto">⚑ Follow-up</span>}
+      </div>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="p-3 py-0">
           <div className="flex items-start justify-between mb-2">
