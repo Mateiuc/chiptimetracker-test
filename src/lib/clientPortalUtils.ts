@@ -1,6 +1,6 @@
 import { Client, Vehicle, Task, TaskStatus, Part, PaymentMethod } from '@/types';
 
-export const PORTAL_BASE_URL = 'https://chiptime.chipplc.one';
+export const PORTAL_BASE_URL = 'https://chiptimetracker-test.lovable.app';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SessionCostDetail {
