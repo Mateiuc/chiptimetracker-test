@@ -2,12 +2,12 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { createPortal } from 'react-dom';
 import { ClientCostSummary } from '@/lib/clientPortalUtils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/formatTime';
-import { Car, Clock, Wrench, DollarSign, Camera, ChevronLeft, ChevronRight, FileText, ExternalLink, X } from 'lucide-react';
+import { Car, Clock, Wrench, DollarSign, Camera, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, FileText, ExternalLink, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ClientCostBreakdownProps {
@@ -134,6 +134,15 @@ const PhotoGallery = ({ photoUrls }: { photoUrls: string[] }) => {
 };
 
 export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdownProps) => {
+  // Collapse state for vehicle cards — all expanded by default
+  const [collapsedVehicles, setCollapsedVehicles] = useState<Set<number>>(new Set());
+  const toggleVehicle = (idx: number) => {
+    setCollapsedVehicles(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
   const formatDate = (date: Date | string) => {
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return 'N/A';
@@ -227,21 +236,45 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
           const v = vehicleSummary.vehicle;
           const vehicleName = [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle';
           const diagnosticPdfUrl = vehicleSummary.sessions.find(s => s.diagnosticPdfUrl)?.diagnosticPdfUrl;
+          const isCollapsed = collapsedVehicles.has(vIdx);
+          const vehicleTotal = vehicleSummary.vehicleTotal;
+          const deposit = v.prepaidAmount || 0;
+          const balanceDue = Math.max(0, vehicleTotal - deposit);
 
           return (
             <Card key={vIdx} className="overflow-hidden">
-              <CardHeader className="py-3 px-4 md:py-4 md:px-6 bg-primary/10">
-                <CardTitle className="text-sm md:text-lg font-bold flex items-center gap-2">
-                  <Car className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                  {vehicleName}
-                  {v.color && (
-                    <Badge variant="outline" className="text-[10px] md:text-xs ml-auto">
-                      {v.color}
-                    </Badge>
-                  )}
-                </CardTitle>
+              <button
+                onClick={() => toggleVehicle(vIdx)}
+                className="w-full text-left py-3 px-4 md:py-4 md:px-6 bg-primary/10 hover:bg-primary/15 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Car className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
+                    <span className="text-sm md:text-lg font-bold truncate">{vehicleName}</span>
+                    {v.color && (
+                      <Badge variant="outline" className="text-[10px] md:text-xs shrink-0">
+                        {v.color}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {vehicleTotal > 0 && (
+                      <span className={`text-sm font-bold ${deposit > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {deposit > 0 ? `Due: ${formatCurrency(balanceDue)}` : formatCurrency(vehicleTotal)}
+                      </span>
+                    )}
+                    {isCollapsed
+                      ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      : <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    }
+                  </div>
+                </div>
                 {v.vin && (
-                  <p className="text-xs text-muted-foreground font-mono mt-0.5 cursor-pointer hover:text-foreground transition-colors" onClick={() => { navigator.clipboard.writeText(v.vin); toast({ title: 'VIN Copied!', description: v.vin }); }} title="Click to copy VIN">
+                  <p
+                    className="text-xs text-muted-foreground font-mono mt-0.5 text-left hover:text-foreground transition-colors"
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(v.vin); toast({ title: 'VIN Copied!', description: v.vin }); }}
+                    title="Click to copy VIN"
+                  >
                     VIN: {v.vin}
                   </p>
                 )}
@@ -251,13 +284,15 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors mt-1"
+                    onClick={e => e.stopPropagation()}
                   >
                     <FileText className="h-3.5 w-3.5" />
                     View Diagnostic Report
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
-              </CardHeader>
+              </button>
+              {!isCollapsed && (
               <CardContent className="p-0">
                 {vehicleSummary.sessions.map((session, sIdx) => (
                   <div key={sIdx} className="border-b last:border-b-0 p-4 md:p-6 space-y-2 md:space-y-3">
@@ -405,6 +440,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                   )}
                 </div>
               </CardContent>
+              )}
             </Card>
           );
         })}
