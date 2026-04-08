@@ -995,7 +995,34 @@ const DesktopDashboard = () => {
       {/* Header */}
       <header className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 shadow-lg shrink-0">
         <div className="px-6 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-primary-foreground">ChipTime Desktop</h1>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-primary-foreground leading-tight">ChipTime</h1>
+              <p className="text-xs text-primary-foreground/60">Desktop Dashboard</p>
+            </div>
+            {/* Quick KPI pills */}
+            <div className="hidden lg:flex items-center gap-2 ml-2">
+              {countByStatus.active > 0 && (
+                <span className="flex items-center gap-1.5 bg-blue-500/25 text-blue-100 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-400/30">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-300"></span>
+                  </span>
+                  {countByStatus.active} active
+                </span>
+              )}
+              {countByStatus.completed > 0 && (
+                <span className="bg-orange-500/25 text-orange-100 text-xs font-semibold px-2.5 py-1 rounded-full border border-orange-400/30">
+                  {countByStatus.completed} to bill
+                </span>
+              )}
+              {countByStatus.paid > 0 && (
+                <span className="bg-emerald-500/25 text-emerald-100 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-400/30">
+                  {countByStatus.paid} paid
+                </span>
+              )}
+            </div>
+          </div>
             <div className="flex items-center gap-3">
               <div className="relative w-80">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-foreground/60" />
@@ -1024,23 +1051,27 @@ const DesktopDashboard = () => {
               <Upload className={`h-4 w-4 mr-1 ${saving ? 'animate-pulse' : ''}`} />
               Save
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDesktopView(desktopView === 'clients' ? 'tree' : 'clients')}
-              className={`h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 ${desktopView === 'clients' ? 'bg-primary-foreground/20' : ''}`}
-              title="Manage Clients">
-              <Users className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDesktopView(desktopView === 'invoices' ? 'tree' : 'invoices')}
-              className={`h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 ${desktopView === 'invoices' ? 'bg-primary-foreground/20' : ''}`}>
-              <Receipt className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDesktopView(desktopView === 'reports' ? 'tree' : 'reports')}
-              className={`h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 ${desktopView === 'reports' ? 'bg-primary-foreground/20' : ''}`}>
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDesktopView(desktopView === 'settings' ? 'tree' : 'settings')}
-              className={`h-9 w-9 text-primary-foreground hover:bg-primary-foreground/10 ${desktopView === 'settings' ? 'bg-primary-foreground/20' : ''}`}>
-              <SettingsIcon className="h-4 w-4" />
-            </Button>
+            <div className="h-6 w-px bg-primary-foreground/20 mx-1" />
+            {[
+              { view: 'clients' as const, icon: Users, label: 'Clients' },
+              { view: 'invoices' as const, icon: Receipt, label: 'Invoices' },
+              { view: 'reports' as const, icon: BarChart3, label: 'Reports' },
+              { view: 'settings' as const, icon: SettingsIcon, label: 'Settings' },
+            ].map(({ view, icon: Icon, label }) => (
+              <button
+                key={view}
+                onClick={() => setDesktopView(desktopView === view ? 'tree' : view)}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-all text-primary-foreground ${
+                  desktopView === view
+                    ? 'bg-white/25 ring-2 ring-white/40'
+                    : 'hover:bg-primary-foreground/10 opacity-70 hover:opacity-100'
+                }`}
+                title={desktopView === view ? `Close ${label}` : `Open ${label}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-[10px] font-semibold leading-none">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -1612,8 +1643,12 @@ const DesktopDashboard = () => {
                                         <Badge className={`text-xs border ${statusColors[task.status] || ''}`}>{task.status}</Badge>
                                         <span className="font-mono text-sm font-semibold">{formatDuration(task.totalTime)}</span>
                                         <span className="font-bold text-sm">{formatCurrency(cost)}</span>
+                                        {task.needsFollowUp && (
+                                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-400/50 bg-orange-500/10">
+                                            ⚑ Follow-up
+                                          </Badge>
+                                        )}
                                         {photoCount > 0 && <span className="text-xs text-muted-foreground">📷 {photoCount}</span>}
-                                        {task.needsFollowUp && <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white border-orange-500">⚑ Follow-up</Badge>}
                                         {task.diagnosticPdfUrl && (
                                           <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-500/40">
                                             <FileUp className="h-3 w-3 mr-1" />PDF

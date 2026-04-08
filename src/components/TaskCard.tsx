@@ -1293,36 +1293,36 @@ export const TaskCard = ({
     return total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0);
   }, 0);
   const totalCost = laborCost + partsCost;
-  const statusStripColor = {
-    'in-progress': 'bg-blue-500',
-    'paused': 'bg-orange-500',
-    'pending': 'bg-yellow-500',
-    'completed': 'bg-green-500',
-    'billed': 'bg-purple-500',
-    'paid': 'bg-emerald-500',
-  }[task.status] || 'bg-muted';
-  const statusLabel = {
-    'in-progress': 'In Progress',
-    'paused': 'Paused',
-    'pending': 'Pending',
-    'completed': 'Completed',
-    'billed': 'Billed',
-    'paid': 'Paid',
-  }[task.status] || task.status;
-
   return <Card className={`overflow-hidden transition-all hover:shadow-md ${colorScheme.card} border ${colorScheme.border}`}>
-      <div className={`${statusStripColor} px-3 py-1 flex items-center gap-2 text-white text-[10px] font-semibold`}>
-        {task.status === 'in-progress' && (
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-          </span>
-        )}
-        <span>{statusLabel}</span>
-        {task.needsFollowUp && <span className="ml-auto">⚑ Follow-up</span>}
-      </div>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="p-3 py-0">
+          {/* Status bar at top of card */}
+          <div className={`-mx-3 px-3 py-1 mb-2 flex items-center justify-between text-xs font-medium ${
+            task.status === 'in-progress' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' :
+            task.status === 'paused' ? 'bg-orange-500/15 text-orange-700 dark:text-orange-300' :
+            task.status === 'pending' ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300' :
+            task.status === 'completed' ? 'bg-green-500/10 text-green-700 dark:text-green-300' :
+            task.status === 'billed' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300' :
+            task.status === 'paid' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' :
+            'bg-muted/50 text-muted-foreground'
+          }`}>
+            <div className="flex items-center gap-1.5">
+              {task.status === 'in-progress' && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+              )}
+              <span className="capitalize">{task.status.replace('-', ' ')}</span>
+              {task.needsFollowUp && (
+                <span className="ml-1 text-orange-500 font-bold" title="Needs follow-up">🔁 Return</span>
+              )}
+            </div>
+            {task.status === 'in-progress' && task.startTime && (
+              <span className="font-mono font-bold">{formatDuration(displayTime)}</span>
+            )}
+          </div>
+
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
               <p className="text-sm font-semibold">
@@ -1362,10 +1362,6 @@ export const TaskCard = ({
                       <DropdownMenuItem onClick={handleGenerateBill}>
                         <FileText className="h-4 w-4 mr-2" />
                         Generate Bill & Mark Billed
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onMarkPaid(task.id)}>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Paid
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onRestartTimer(task.id)}>
                         <Play className="h-4 w-4 mr-2" />
@@ -1425,7 +1421,7 @@ export const TaskCard = ({
           <div className="grid grid-cols-3 gap-2 mb-2 text-sm">
             <div className="text-center">
               <div className="text-muted-foreground text-xs font-medium mb-1">{isActive ? 'Period' : 'Total'}</div>
-              <div className="font-bold text-sm">{formatDuration(displayTime)}</div>
+              <div className={`font-bold text-sm ${task.status === 'in-progress' ? 'text-blue-600 dark:text-blue-400' : ''}`}>{formatDuration(displayTime)}</div>
             </div>
             <div className="text-center">
               <div className="text-muted-foreground text-xs font-medium mb-1">Sessions</div>

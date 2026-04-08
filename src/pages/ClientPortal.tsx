@@ -6,7 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientCostBreakdown } from '@/components/ClientCostBreakdown';
 import { ClientCostSummary, decodeClientData, checkPortalAccess, fetchPortalWithCode } from '@/lib/clientPortalUtils';
-import { Lock, Wrench } from 'lucide-react';
+import { Lock, Wrench, Shield, Clock } from 'lucide-react';
 
 const ClientPortal = () => {
   const location = useLocation();
@@ -50,7 +50,6 @@ const ClientPortal = () => {
             setVerified(true);
           } else {
             setRequiresCode(true);
-            // Store for local hash-based validation
             (window as any).__portalAccessCode = accessCode;
           }
         } else {
@@ -67,7 +66,6 @@ const ClientPortal = () => {
 
   const handleVerify = async () => {
     if (cloudPortalId) {
-      // Server-side PIN validation
       setVerifying(true);
       setError('');
       try {
@@ -81,7 +79,6 @@ const ClientPortal = () => {
         setVerifying(false);
       }
     } else {
-      // Local hash-based validation
       const expectedCode = (window as any).__portalAccessCode;
       if (!expectedCode || pin === expectedCode) {
         setVerified(true);
@@ -95,17 +92,19 @@ const ClientPortal = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 gap-4">
+        <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-blue-200 text-sm font-medium">Loading your records...</p>
       </div>
     );
   }
 
   if (error && !costSummary && !requiresCode) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-4">
-        <p className="text-destructive font-semibold">{error}</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 p-6 gap-6">
+        <div className="text-5xl">⚠️</div>
+        <p className="text-white font-semibold text-center">{error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="border-white/30 text-white hover:bg-white/10">
           Try Again
         </Button>
       </div>
@@ -115,64 +114,140 @@ const ClientPortal = () => {
   // PIN screen
   if (!verified && requiresCode) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="border-b-2 border-border px-4 py-3 flex items-center gap-2 bg-card">
-          <Wrench className="h-5 w-5 text-primary" />
-          <span className="font-bold text-foreground">Client Portal</span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex flex-col">
+        {/* Header */}
+        <header className="px-4 py-4 flex items-center gap-3">
+          <div className="bg-blue-500/20 rounded-xl p-2 border border-blue-400/30">
+            <Wrench className="h-5 w-5 text-blue-400" />
+          </div>
+          <div>
+            <span className="font-bold text-white text-sm">Auto Service Portal</span>
+            <p className="text-xs text-blue-300/70">Secure client access</p>
+          </div>
         </header>
 
-        <div className="flex-1 flex items-center justify-center p-6 md:p-8 lg:p-12">
-          <Card className="w-full max-w-xs md:max-w-sm lg:max-w-md">
-            <CardContent className="pt-6 space-y-6 text-center">
-              <Lock className="h-10 w-10 mx-auto text-primary" />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm space-y-6">
+            {/* Lock icon */}
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/15 border-2 border-blue-400/30 mx-auto">
+                <Lock className="h-9 w-9 text-blue-400" />
+              </div>
               <div>
-                <h2 className="font-bold text-lg text-foreground">Enter Access Code</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter the 4-digit code provided by your mechanic
+                <h1 className="text-2xl font-bold text-white">Enter your code</h1>
+                <p className="text-blue-200/70 text-sm mt-1">
+                  Your mechanic provided a 4-digit access code
                 </p>
               </div>
+            </div>
 
-              <div className="flex justify-center">
-                <InputOTP maxLength={4} value={pin} onChange={setPin}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
+            {/* OTP Input */}
+            <div className="flex justify-center">
+              <InputOTP maxLength={4} value={pin} onChange={setPin}>
+                <InputOTPGroup className="gap-3">
+                  {[0,1,2,3].map(i => (
+                    <InputOTPSlot
+                      key={i}
+                      index={i}
+                      className="w-14 h-14 text-xl font-bold bg-white/10 border-white/20 text-white rounded-xl"
+                    />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
 
-              {error && <p className="text-destructive text-xs font-medium">{error}</p>}
+            {error && (
+              <p className="text-red-400 text-sm text-center font-medium bg-red-500/10 border border-red-500/20 rounded-lg py-2 px-4">
+                {error}
+              </p>
+            )}
 
-              <Button onClick={handleVerify} disabled={pin.length < 4 || verifying} className="w-full">
-                {verifying ? 'Verifying...' : 'View My Costs'}
-              </Button>
-            </CardContent>
-          </Card>
+            <Button
+              onClick={handleVerify}
+              disabled={pin.length < 4 || verifying}
+              className="w-full h-12 text-base font-semibold bg-blue-500 hover:bg-blue-400 text-white rounded-xl"
+            >
+              {verifying ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Verifying...
+                </span>
+              ) : (
+                'View My Service Records'
+              )}
+            </Button>
+
+            {/* Trust badge */}
+            <div className="flex items-center justify-center gap-2 text-xs text-blue-300/50">
+              <Shield className="h-3 w-3" />
+              <span>Your data is private and secure</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   // Cost breakdown view
+  const tabCounts = {
+    pending: costSummary?.vehicles.flatMap(v => v.sessions).filter(s => ['pending','in-progress','paused','completed'].includes(s.status)).length ?? 0,
+    billed: costSummary?.vehicles.flatMap(v => v.sessions).filter(s => s.status === 'billed').length ?? 0,
+    paid: costSummary?.vehicles.flatMap(v => v.sessions).filter(s => s.status === 'paid').length ?? 0,
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b-2 border-border px-4 py-3 sticky top-0 z-10 bg-card space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:px-6 lg:px-8">
-        <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-primary" />
-          <span className="font-bold text-foreground">Client Portal</span>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-10">
+        <div className="px-4 py-3 max-w-4xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-lg p-1.5">
+                <Wrench className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-white text-sm leading-tight">Service Portal</p>
+                {costSummary && (
+                  <p className="text-blue-100/80 text-xs leading-tight">Hello, {costSummary.client.name}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-blue-100/70">
+              <Clock className="h-3 w-3" />
+              <span>Live</span>
+            </div>
+          </div>
+
+          {/* Tab bar */}
+          <div className="mt-3">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'pending' | 'billed' | 'paid')}>
+              <TabsList className="w-full bg-white/15 border border-white/20 p-1 rounded-xl h-auto">
+                {([
+                  { value: 'pending', label: 'In Progress', emoji: '🔧' },
+                  { value: 'billed', label: 'Billed', emoji: '📋' },
+                  { value: 'paid', label: 'Paid', emoji: '✅' },
+                ] as const).map(tab => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="flex-1 text-white/70 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-bold rounded-lg py-2 text-xs font-medium transition-all"
+                  >
+                    <span className="mr-1">{tab.emoji}</span>
+                    {tab.label}
+                    {tabCounts[tab.value] > 0 && (
+                      <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === tab.value ? 'bg-blue-100 text-blue-700' : 'bg-white/20 text-white'}`}>
+                        {tabCounts[tab.value]}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'pending' | 'billed' | 'paid')}>
-          <TabsList className="w-full md:w-auto">
-            <TabsTrigger value="pending" className="flex-1 md:flex-none">Pending</TabsTrigger>
-            <TabsTrigger value="billed" className="flex-1 md:flex-none">Billed</TabsTrigger>
-            <TabsTrigger value="paid" className="flex-1 md:flex-none">Paid</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </header>
 
-      <div className="p-4 pb-8 md:p-8 lg:p-12 md:max-w-[720px] lg:max-w-[1200px] xl:max-w-[1400px] md:mx-auto">
+      <div className="p-4 pb-10 max-w-4xl mx-auto">
         {costSummary && <ClientCostBreakdown costSummary={costSummary} filter={activeTab} />}
       </div>
     </div>

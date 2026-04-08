@@ -105,6 +105,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
+  /* Smooth tap/click feedback on mobile */
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Mobile phone preview frame */
   .mobile-preview-container {
     min-height: 100vh;
@@ -146,5 +151,25 @@ All colors MUST be HSL.
       border-radius: 0;
       box-shadow: none;
     }
+  }
+}
+
+@layer utilities {
+  /* Live timer pulse glow for active tasks */
+  .timer-active-glow {
+    animation: timer-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes timer-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Card press effect on mobile */
+  .card-pressable {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .card-pressable:active {
+    transform: scale(0.985);
   }
 }
