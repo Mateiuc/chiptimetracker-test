@@ -606,7 +606,7 @@ const DesktopDashboard = () => {
     const client = task ? clients.find(c => c.id === task.clientId) : null;
     if (client) {
       const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: 'billed' as const } : t);
-      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName)
+      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl)
         .then(result => { if (!client.portalId) updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode }); })
         .catch(err => console.warn('[CloudSync] Portal sync failed:', err));
     }
@@ -619,7 +619,7 @@ const DesktopDashboard = () => {
     const client = task ? clients.find(c => c.id === task.clientId) : null;
     if (client) {
       const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: 'paid' as const } : t);
-      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName)
+      syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl)
         .then(result => { if (!client.portalId) updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode }); })
         .catch(err => console.warn('[CloudSync] Portal sync failed:', err));
     }
@@ -1441,7 +1441,7 @@ const DesktopDashboard = () => {
                                 toast({ title: 'PIN Copied!', description: `PIN: ${client.accessCode}` });
                               } else {
                                 try {
-                                  const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName);
+                                  const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
                                   updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
                                   navigator.clipboard.writeText(result.accessCode);
                                   toast({ title: 'PIN Copied!', description: `PIN: ${result.accessCode}` });
@@ -1454,7 +1454,7 @@ const DesktopDashboard = () => {
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
                               try {
-                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName);
+                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
                                 updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
                                 const url = `${PORTAL_BASE_URL}/client-view?id=${result.portalId}`;
                                 await navigator.clipboard.writeText(url);
@@ -1485,7 +1485,7 @@ const DesktopDashboard = () => {
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
                               try {
-                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName);
+                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
                                 updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
                                 window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
                               } catch {

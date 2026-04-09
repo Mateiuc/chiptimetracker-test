@@ -195,7 +195,11 @@ const ClientPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen" style={
+      costSummary?.portalBgImageUrl
+        ? { backgroundImage: `url(${costSummary.portalBgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+        : { background: 'var(--color-background-tertiary, #f5f5f3)' }
+    }>
       {/* Header */}
       <header className="shadow-lg sticky top-0 z-10" style={{ background: costSummary?.portalBgColor || '#1d4ed8' }}>
         <div className="px-4 py-3 max-w-4xl mx-auto">

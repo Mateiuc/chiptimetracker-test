@@ -241,7 +241,15 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {vehicleSummary.vehicleTotal > 0 && (
-                        <span className={`text-sm font-bold ${deposit > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        <span className={`text-sm font-bold ${
+                          deposit > 0
+                            ? 'text-orange-600 dark:text-orange-400'
+                            : filter === 'paid'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : filter === 'billed'
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-blue-600 dark:text-blue-400'
+                        }`}>
                           {deposit > 0 ? formatCurrency(balanceDue) : formatCurrency(vehicleSummary.vehicleTotal)}
                         </span>
                       )}
@@ -372,7 +380,11 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
               {grandTotalAddKey > 0 && <div className="flex justify-between text-sm"><span>Add Key:</span><span className="font-semibold">{formatCurrency(grandTotalAddKey)}</span></div>}
               {grandTotalAllKeysLost > 0 && <div className="flex justify-between text-sm"><span>All Keys Lost:</span><span className="font-semibold">{formatCurrency(grandTotalAllKeysLost)}</span></div>}
               <div className="flex justify-between text-sm"><span>Total Parts:</span><span className="font-semibold">{formatCurrency(grandTotalParts)}</span></div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2 text-primary"><span>GRAND TOTAL:</span><span>{formatCurrency(grandTotal)}</span></div>
+              <div className={`flex justify-between text-lg font-bold border-t pt-2 mt-2 ${
+                filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                'text-blue-600 dark:text-blue-400'
+              }`}><span>GRAND TOTAL:</span><span>{formatCurrency(grandTotal)}</span></div>
               {(() => {
                 const vehicleDeposits = filteredVehicles.reduce((sum, v) => sum + (v.vehicle.prepaidAmount || 0), 0);
                 const clientDeposit = costSummary.client.prepaidAmount || 0;

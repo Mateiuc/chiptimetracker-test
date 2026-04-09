@@ -112,7 +112,7 @@ export const DesktopClientsView = ({
 
   const handleStartEdit = (client: Client) => {
     setEditingClientId(client.id);
-    setEditFormData({ name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, state: client.state, zip: client.zip, companyName: client.companyName, itin: client.itin, notes: client.notes, hourlyRate: client.hourlyRate, cloningRate: client.cloningRate, programmingRate: client.programmingRate, addKeyRate: client.addKeyRate, allKeysLostRate: client.allKeysLostRate, prepaidAmount: client.prepaidAmount, portalLogoUrl: client.portalLogoUrl, portalBgColor: client.portalBgColor, portalBusinessName: client.portalBusinessName });
+    setEditFormData({ name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, state: client.state, zip: client.zip, companyName: client.companyName, itin: client.itin, notes: client.notes, hourlyRate: client.hourlyRate, cloningRate: client.cloningRate, programmingRate: client.programmingRate, addKeyRate: client.addKeyRate, allKeysLostRate: client.allKeysLostRate, prepaidAmount: client.prepaidAmount, portalLogoUrl: client.portalLogoUrl, portalBgColor: client.portalBgColor, portalBusinessName: client.portalBusinessName, portalBgImageUrl: client.portalBgImageUrl });
   };
 
   const handleSaveClientEdit = (clientId: string) => {
@@ -185,7 +185,7 @@ export const DesktopClientsView = ({
 
   const handleShareLink = async (client: Client) => {
     try {
-      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
+      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName, selectedClient.portalBgImageUrl || settings.portalBgImageUrl);
       onUpdateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
       const url = `${PORTAL_BASE_URL}/client-view?id=${result.portalId}`;
       await navigator.clipboard.writeText(url);
@@ -367,6 +367,46 @@ export const DesktopClientsView = ({
                     )}
                     <p className="text-xs text-muted-foreground">Leave empty to use the default from Settings</p>
                   </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Background Image</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => document.getElementById(`client-bg-upload-${selectedClient?.id}`)?.click()}
+                      >
+                        📁 Upload from PC
+                      </Button>
+                      <input
+                        id={`client-bg-upload-${selectedClient?.id}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => setEditFormData(p => ({ ...p, portalBgImageUrl: ev.target?.result as string }));
+                          reader.readAsDataURL(file);
+                          e.target.value = '';
+                        }}
+                      />
+                      {editFormData.portalBgImageUrl && (
+                        <Button type="button" variant="ghost" size="sm" className="text-destructive shrink-0" onClick={() => setEditFormData(p => ({ ...p, portalBgImageUrl: undefined }))}>
+                          ✕ Remove
+                        </Button>
+                      )}
+                    </div>
+                    {editFormData.portalBgImageUrl && (
+                      <div className="mt-1 rounded-lg overflow-hidden border border-border h-20 relative">
+                        <img src={editFormData.portalBgImageUrl} alt="Background preview" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">Preview</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">Shown as page background in this client's portal</p>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -390,7 +430,7 @@ export const DesktopClientsView = ({
                       toast({ title: 'PIN Copied!', description: `PIN: ${selectedClient.accessCode}` });
                     } else {
                       try {
-                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
+                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName, selectedClient.portalBgImageUrl || settings.portalBgImageUrl);
                         onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                         navigator.clipboard.writeText(result.accessCode);
                         toast({ title: 'PIN Copied!', description: `PIN: ${result.accessCode}` });
@@ -403,7 +443,7 @@ export const DesktopClientsView = ({
                   </Button>
                   <Button size="sm" variant="outline" onClick={async () => {
                     try {
-                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
+                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName, selectedClient.portalBgImageUrl || settings.portalBgImageUrl);
                       onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                       window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
                     } catch {

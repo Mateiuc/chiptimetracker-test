@@ -23,6 +23,7 @@ export interface Client {
   portalLogoUrl?: string;
   portalBgColor?: string;
   portalBusinessName?: string;
+  portalBgImageUrl?: string;   // background image for portal body
 }
 
 export interface Vehicle {
@@ -140,4 +141,5 @@ export interface Settings {
   portalLogoUrl?: string;       // URL or base64 of shop logo
   portalBgColor?: string;       // hex color for portal header gradient
   portalBusinessName?: string;  // shown in portal header instead of "Service Portal"
+  portalBgImageUrl?: string;    // background image for portal body
 }

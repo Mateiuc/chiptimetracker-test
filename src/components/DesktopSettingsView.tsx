@@ -28,6 +28,7 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
   const [portalLogoUrl, setPortalLogoUrl] = useState(settings.portalLogoUrl || '');
   const [portalBgColor, setPortalBgColor] = useState(settings.portalBgColor || '#1d4ed8');
   const [portalBusinessName, setPortalBusinessName] = useState(settings.portalBusinessName || '');
+  const [portalBgImageUrl, setPortalBgImageUrl] = useState(settings.portalBgImageUrl || '');
 
   useEffect(() => {
     setDefaultHourlyRate(settings.defaultHourlyRate?.toString() || '75');
@@ -54,6 +55,7 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
       portalLogoUrl: portalLogoUrl.trim() || undefined,
       portalBgColor: portalBgColor || '#1d4ed8',
       portalBusinessName: portalBusinessName.trim() || undefined,
+      portalBgImageUrl: portalBgImageUrl || undefined,
     });
     toast({ title: 'Settings Saved' });
   };
@@ -338,6 +340,46 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
               </div>
             </div>
             <p className="text-xs text-muted-foreground">Background color of the portal header bar</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Background Image</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => document.getElementById('settings-bg-upload')?.click()}
+              >
+                📁 Upload from PC
+              </Button>
+              <input
+                id="settings-bg-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => setPortalBgImageUrl(ev.target?.result as string);
+                  reader.readAsDataURL(file);
+                  e.target.value = '';
+                }}
+              />
+              {portalBgImageUrl && (
+                <Button type="button" variant="ghost" size="sm" className="text-destructive shrink-0" onClick={() => setPortalBgImageUrl('')}>
+                  ✕ Remove
+                </Button>
+              )}
+            </div>
+            {portalBgImageUrl && (
+              <div className="mt-1 rounded-lg overflow-hidden border border-border h-20 relative">
+                <img src={portalBgImageUrl} alt="Background preview" className="w-full h-full object-cover" />
+                <span className="absolute bottom-1 right-1 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">Preview</span>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Shown as page background in the client portal</p>
           </div>
         </CardContent>
       </Card>

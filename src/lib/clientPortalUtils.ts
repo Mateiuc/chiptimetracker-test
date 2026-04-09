@@ -51,6 +51,7 @@ export interface ClientCostSummary {
   portalLogoUrl?: string;
   portalBgColor?: string;
   portalBusinessName?: string;
+  portalBgImageUrl?: string;
 }
 
 // Slim wire format types for compact encoding
@@ -114,6 +115,7 @@ interface SlimPayload {
   logo?: string;
   bgc?: string;
   biz?: string;
+  bgi?: string;  // background image
 }
 
 export function generateAccessCode(): string {
@@ -307,6 +309,7 @@ function slimDown(data: ClientCostSummary): SlimPayload {
     logo: data.portalLogoUrl || undefined,
     bgc: data.portalBgColor || undefined,
     biz: data.portalBusinessName || undefined,
+    bgi: data.portalBgImageUrl || undefined,
   };
 }
 
@@ -365,6 +368,7 @@ export function inflateSlimPayload(slim: SlimPayload): ClientCostSummary {
     portalLogoUrl: slim.logo || undefined,
     portalBgColor: slim.bgc || undefined,
     portalBusinessName: slim.biz || undefined,
+    portalBgImageUrl: slim.bgi || undefined,
   };
 }
 
@@ -627,6 +631,7 @@ export async function syncPortalToCloud(
   portalLogoUrl?: string,
   portalBgColor?: string,
   portalBusinessName?: string,
+  portalBgImageUrl?: string,
 ): Promise<{ portalId: string; accessCode: string }> {
   const accessCode = client.accessCode || generateAccessCode();
 
@@ -637,6 +642,7 @@ export async function syncPortalToCloud(
   summary.portalLogoUrl = portalLogoUrl;
   summary.portalBgColor = portalBgColor;
   summary.portalBusinessName = portalBusinessName;
+  summary.portalBgImageUrl = portalBgImageUrl;
   const slim = slimDown(summary);
 
   const { data, error } = await supabase.functions.invoke('sync-portal', {
