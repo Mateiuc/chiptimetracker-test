@@ -1095,6 +1095,7 @@ const DesktopDashboard = () => {
           onCancel={() => setDesktopView('tree')}
           settings={settings}
         />
+      ) : desktopView === 'invoices' ? (
         <DesktopInvoiceView settings={settings} />
       ) : desktopView === 'clients' ? (
         <DesktopClientsView
