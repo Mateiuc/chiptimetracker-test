@@ -178,8 +178,8 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
 
   return (
     <div className="space-y-4 md:space-y-5" style={{ background: 'transparent' }}>
-      {/* Client greeting */}
-      <div className="text-center py-2">
+      {/* Client greeting — solid background so it's always readable over background images */}
+      <div className="text-center py-3 px-6 rounded-2xl mx-auto max-w-sm" style={{ background: 'var(--color-background-primary, white)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
         <h2 className="text-xl md:text-2xl font-bold text-foreground">Hello, {costSummary.client.name}</h2>
         <p className="text-sm text-muted-foreground mt-1">Your service records</p>
       </div>
@@ -193,7 +193,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
       {filteredVehicles.length > 0 && (
         <>
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: 'var(--color-background-primary, white)', boxShadow: '0 1px 6px rgba(0,0,0,0.08)' }}>
             <p className="text-xs text-muted-foreground">
               {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? 's' : ''} · {filteredVehicles.reduce((s, v) => s + v.sessions.length, 0)} sessions
             </p>

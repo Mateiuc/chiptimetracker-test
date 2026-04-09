@@ -262,9 +262,6 @@ const ClientPortal = () => {
       </header>
 
       <div className="p-4 pb-10 max-w-4xl mx-auto">
-        {costSummary?.portalBgImageUrl && (
-          <div className="absolute inset-0 top-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(2px)' }} />
-        )}
         <div className="relative z-10">
           {costSummary && <ClientCostBreakdown costSummary={costSummary} filter={activeTab} />}
         </div>
