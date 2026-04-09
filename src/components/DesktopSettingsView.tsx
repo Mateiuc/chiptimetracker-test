@@ -239,14 +239,9 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
               </div>
             </div>
           ))}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPaymentMethods([...paymentMethods, { label: '', url: '', type: 'link' }])}>
-              <Plus className="h-4 w-4 mr-1" /> Add Link (Venmo, CashApp…)
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setPaymentMethods([...paymentMethods, { label: 'Credit / Debit Card', url: '', type: 'card' }])}>
-              <Plus className="h-4 w-4 mr-1" /> Add Card Payment
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => setPaymentMethods([...paymentMethods, { label: '', url: '', type: 'link' }])}>
+            <Plus className="h-4 w-4 mr-1" /> Add Payment Method
+          </Button>
           <p className="text-xs text-muted-foreground">These appear as Pay buttons in the client portal — only visible on the Billed tab</p>
         </CardContent>
       </Card>
