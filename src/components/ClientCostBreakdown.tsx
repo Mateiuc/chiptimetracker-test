@@ -422,20 +422,20 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                   </>
                 );
               })()}
+              {/* Pay Deposit — inside the card, separated by a divider */}
+              {showPayButtons && (
+                <div className="pt-3 mt-2 border-t border-border/40">
+                  <button
+                    onClick={() => openPay('deposit')}
+                    className="w-full border-2 border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Pay Deposit
+                  </button>
+                </div>
+              )}
             </CardContent>
           </Card>
-
-          {/* Pay Deposit button below grand total */}
-          {showPayButtons && (
-            <div className="flex justify-center">
-              <button
-                onClick={() => openPay('deposit')}
-                className="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950 font-bold px-8 py-2.5 rounded-xl text-sm transition-colors w-full max-w-xs"
-              >
-                + Pay Deposit
-              </button>
-            </div>
-          )}
 
           {/* Payment sheet — bottom sheet style */}
           {paySheet !== null && (
