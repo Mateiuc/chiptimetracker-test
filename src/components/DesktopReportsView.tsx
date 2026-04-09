@@ -275,9 +275,9 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   );
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Filter Toolbar — single row */}
-      <div className="bg-card border rounded-lg px-4 py-3 shadow-sm">
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Filter Toolbar — fixed at top, outside scroll container */}
+      <div className="bg-card border-b px-6 py-3 shrink-0">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={rptClient} onValueChange={v => { setRptClient(v); setRptVehicle('all'); }}>
             <SelectTrigger className="w-[160px] h-8 text-sm"><SelectValue placeholder="All Clients" /></SelectTrigger>
@@ -322,6 +322,9 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
           </div>
         </div>
       </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -529,6 +532,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 };
