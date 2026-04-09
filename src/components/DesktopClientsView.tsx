@@ -112,7 +112,7 @@ export const DesktopClientsView = ({
 
   const handleStartEdit = (client: Client) => {
     setEditingClientId(client.id);
-    setEditFormData({ name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, state: client.state, zip: client.zip, companyName: client.companyName, itin: client.itin, notes: client.notes, hourlyRate: client.hourlyRate, cloningRate: client.cloningRate, programmingRate: client.programmingRate, addKeyRate: client.addKeyRate, allKeysLostRate: client.allKeysLostRate, prepaidAmount: client.prepaidAmount });
+    setEditFormData({ name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, state: client.state, zip: client.zip, companyName: client.companyName, itin: client.itin, notes: client.notes, hourlyRate: client.hourlyRate, cloningRate: client.cloningRate, programmingRate: client.programmingRate, addKeyRate: client.addKeyRate, allKeysLostRate: client.allKeysLostRate, prepaidAmount: client.prepaidAmount, portalLogoUrl: client.portalLogoUrl, portalBgColor: client.portalBgColor, portalBusinessName: client.portalBusinessName });
   };
 
   const handleSaveClientEdit = (clientId: string) => {
@@ -185,7 +185,7 @@ export const DesktopClientsView = ({
 
   const handleShareLink = async (client: Client) => {
     try {
-      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
+      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
       onUpdateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
       const url = `${PORTAL_BASE_URL}/client-view?id=${result.portalId}`;
       await navigator.clipboard.writeText(url);
@@ -218,21 +218,25 @@ export const DesktopClientsView = ({
           <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search clients..." className="pl-9" />
         </div>
         <ScrollArea className="flex-1">
-          <div className="space-y-1">
+          <div className="space-y-2">
             {filteredClients.map(client => {
               const stats = getClientStats(client.id);
               const vehicleCount = getClientVehicles(client.id).length;
               const isSelected = selectedClientId === client.id;
+              const colorScheme = getVehicleColorScheme(client.id);
               return (
                 <button
                   key={client.id}
                   onClick={() => { setSelectedClientId(client.id); setEditingClientId(null); }}
-                  className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
-                    isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                  className={`w-full text-left px-4 py-3 rounded-xl border-2 text-sm transition-all ${
+                    isSelected
+                      ? 'ring-2 ring-primary ring-offset-1 ' + colorScheme.border + ' ' + colorScheme.gradient
+                      : colorScheme.border + ' ' + colorScheme.gradient + ' hover:shadow-sm'
                   }`}
                 >
-                  <div className="font-semibold">{client.name}</div>
-                  <div className={`text-xs ${isSelected ? 'opacity-70' : 'text-muted-foreground'}`}>
+                  <div className="font-bold">{client.name}</div>
+                  {client.companyName && <div className="text-xs text-muted-foreground">{client.companyName}</div>}
+                  <div className="text-xs text-muted-foreground mt-0.5">
                     <Car className="inline h-3 w-3 mr-0.5" />{vehicleCount} vehicles · {stats.total} tasks · {stats.active} active
                   </div>
                 </button>
@@ -277,6 +281,52 @@ export const DesktopClientsView = ({
                 <div className="space-y-2"><Label>Deposit ($)</Label><Input type="number" value={editFormData.prepaidAmount ?? ''} onChange={e => setEditFormData(p => ({ ...p, prepaidAmount: e.target.value ? parseFloat(e.target.value) : undefined }))} placeholder="0.00" /></div>
                 <div className="space-y-2 col-span-2"><Label>Notes</Label><textarea className="flex min-h-[60px] w-full rounded-md border-2 border-input bg-white dark:bg-gray-900 px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={editFormData.notes || ''} onChange={e => setEditFormData(p => ({ ...p, notes: e.target.value || undefined }))} placeholder="Internal notes about this client" /></div>
               </div>
+
+              {/* Portal Branding — per-client overrides */}
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-sm font-semibold text-muted-foreground">Portal Branding <span className="font-normal text-xs">(overrides Settings defaults)</span></p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Business Name</Label>
+                    <Input
+                      value={editFormData.portalBusinessName || ''}
+                      onChange={e => setEditFormData(p => ({ ...p, portalBusinessName: e.target.value || undefined }))}
+                      placeholder={settings.portalBusinessName || 'e.g. ChipTime Auto Keys'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Header Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={editFormData.portalBgColor || settings.portalBgColor || '#1d4ed8'}
+                        onChange={e => setEditFormData(p => ({ ...p, portalBgColor: e.target.value }))}
+                        className="h-9 w-14 rounded cursor-pointer border border-border"
+                      />
+                      <div
+                        className="flex-1 h-9 rounded-lg flex items-center justify-center text-white text-xs font-medium"
+                        style={{ background: editFormData.portalBgColor || settings.portalBgColor || '#1d4ed8' }}
+                      >
+                        {editFormData.portalBusinessName || settings.portalBusinessName || 'Service Portal'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Logo URL</Label>
+                    <Input
+                      value={editFormData.portalLogoUrl || ''}
+                      onChange={e => setEditFormData(p => ({ ...p, portalLogoUrl: e.target.value || undefined }))}
+                      placeholder={settings.portalLogoUrl || 'https://yoursite.com/logo.png'}
+                    />
+                    {editFormData.portalLogoUrl && (
+                      <div className="mt-1 p-2 bg-muted rounded-lg inline-block">
+                        <img src={editFormData.portalLogoUrl} alt="Logo preview" className="h-8 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">Leave empty to use the default from Settings</p>
+                  </div>
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button onClick={() => handleSaveClientEdit(selectedClient.id)}><Save className="h-4 w-4 mr-1" /> Save</Button>
                 <Button variant="outline" onClick={() => setEditingClientId(null)}><X className="h-4 w-4 mr-1" /> Cancel</Button>
@@ -298,7 +348,7 @@ export const DesktopClientsView = ({
                       toast({ title: 'PIN Copied!', description: `PIN: ${selectedClient.accessCode}` });
                     } else {
                       try {
-                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
+                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
                         onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                         navigator.clipboard.writeText(result.accessCode);
                         toast({ title: 'PIN Copied!', description: `PIN: ${result.accessCode}` });
@@ -311,7 +361,7 @@ export const DesktopClientsView = ({
                   </Button>
                   <Button size="sm" variant="outline" onClick={async () => {
                     try {
-                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
+                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, selectedClient.portalLogoUrl || settings.portalLogoUrl, selectedClient.portalBgColor || settings.portalBgColor, selectedClient.portalBusinessName || settings.portalBusinessName);
                       onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                       window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
                     } catch {

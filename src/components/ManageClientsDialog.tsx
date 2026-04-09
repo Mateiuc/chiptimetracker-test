@@ -689,7 +689,7 @@ export const ManageClientsDialog = ({
                                     toast({ title: 'PIN Copied!', description: `PIN: ${client.accessCode}` });
                                   } else {
                                     try {
-                                      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
+                                      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName);
                                       onUpdateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
                                       navigator.clipboard.writeText(result.accessCode);
                                       toast({ title: 'PIN Copied!', description: `PIN: ${result.accessCode}` });

@@ -19,6 +19,10 @@ export interface Client {
   prepaidAmount?: number;
   portalId?: string;
   createdAt: Date;
+  // Per-client portal branding (overrides Settings defaults)
+  portalLogoUrl?: string;
+  portalBgColor?: string;
+  portalBusinessName?: string;
 }
 
 export interface Vehicle {
