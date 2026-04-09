@@ -1080,29 +1080,6 @@ const DesktopDashboard = () => {
         </div>
       </header>
 
-      {/* Filter bar — only for non-tree views, not for reports (has its own) */}
-      {desktopView !== 'tree' && desktopView !== 'reports' && (
-        <div className="px-6 py-2 border-b bg-card shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            {(['all', 'active', 'completed', 'billed', 'paid'] as FilterType[]).map(f => (
-              <Button
-                key={f}
-                variant={filter === f ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter(f)}
-                className="capitalize"
-              >
-                {f} ({countByStatus[f]})
-              </Button>
-            ))}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span><strong className="text-foreground">{filteredTree.length}</strong> clients</span>
-            <span><strong className="text-foreground">{filteredTree.reduce((s, c) => s + c.vehicles.length, 0)}</strong> vehicles</span>
-            <span><strong className="text-foreground">{formatCurrency(totalRevenue)}</strong> total</span>
-          </div>
-        </div>
-      )}
 
       {/* Main content */}
       {desktopView === 'settings' ? (
