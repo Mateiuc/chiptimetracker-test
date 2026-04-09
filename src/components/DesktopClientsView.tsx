@@ -185,7 +185,7 @@ export const DesktopClientsView = ({
 
   const handleShareLink = async (client: Client) => {
     try {
-      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods);
+      const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
       onUpdateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
       const url = `${PORTAL_BASE_URL}/client-view?id=${result.portalId}`;
       await navigator.clipboard.writeText(url);
@@ -298,7 +298,7 @@ export const DesktopClientsView = ({
                       toast({ title: 'PIN Copied!', description: `PIN: ${selectedClient.accessCode}` });
                     } else {
                       try {
-                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods);
+                        const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
                         onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                         navigator.clipboard.writeText(result.accessCode);
                         toast({ title: 'PIN Copied!', description: `PIN: ${result.accessCode}` });
@@ -311,7 +311,7 @@ export const DesktopClientsView = ({
                   </Button>
                   <Button size="sm" variant="outline" onClick={async () => {
                     try {
-                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods);
+                      const result = await syncPortalToCloud(selectedClient, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, settings.portalLogoUrl, settings.portalBgColor, settings.portalBusinessName);
                       onUpdateClient(selectedClient.id, { portalId: result.portalId, accessCode: result.accessCode });
                       window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
                     } catch {

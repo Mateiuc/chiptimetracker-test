@@ -34,18 +34,9 @@ const PhotoGallery = ({ photoUrls }: { photoUrls: string[] }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const openLightbox = (index: number) => {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
-
-  const goNext = useCallback(() => {
-    setLightboxIndex(i => (i + 1) % photoUrls.length);
-  }, [photoUrls.length]);
-
-  const goPrev = useCallback(() => {
-    setLightboxIndex(i => (i - 1 + photoUrls.length) % photoUrls.length);
-  }, [photoUrls.length]);
+  const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
+  const goNext = useCallback(() => setLightboxIndex(i => (i + 1) % photoUrls.length), [photoUrls.length]);
+  const goPrev = useCallback(() => setLightboxIndex(i => (i - 1 + photoUrls.length) % photoUrls.length), [photoUrls.length]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -68,63 +59,20 @@ const PhotoGallery = ({ photoUrls }: { photoUrls: string[] }) => {
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {photoUrls.map((url, i) => (
-          <button
-            key={i}
-            onClick={() => openLightbox(i)}
-            className="flex-shrink-0 rounded-md overflow-hidden border border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <img
-              src={url}
-              alt={`Session photo ${i + 1}`}
-              className="w-20 h-16 md:w-48 md:h-36 object-cover"
-              loading="lazy"
-            />
+          <button key={i} onClick={() => openLightbox(i)}
+            className="flex-shrink-0 rounded-md overflow-hidden border border-border hover:border-primary transition-colors">
+            <img src={url} alt={`Session photo ${i + 1}`} className="w-20 h-16 md:w-32 md:h-24 object-cover" loading="lazy" />
           </button>
         ))}
       </div>
-
       {lightboxOpen && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90" onClick={() => setLightboxOpen(false)}>
-          <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            {/* Close button */}
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="absolute top-3 right-3 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-1.5"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            {/* Counter */}
-            <div className="absolute top-3 left-3 z-20 text-white/70 text-sm bg-black/50 rounded-full px-3 py-1">
-              {lightboxIndex + 1} / {photoUrls.length}
-            </div>
-
-            {/* Prev */}
-            {photoUrls.length > 1 && (
-              <button
-                onClick={goPrev}
-                className="absolute left-2 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-2"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-            )}
-
-            {/* Image */}
-            <img
-              src={photoUrls[lightboxIndex]}
-              alt={`Photo ${lightboxIndex + 1}`}
-              className="max-w-full max-h-[85vh] object-contain rounded-md"
-            />
-
-            {/* Next */}
-            {photoUrls.length > 1 && (
-              <button
-                onClick={goNext}
-                className="absolute right-2 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-2"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            )}
+          <div className="relative w-full h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setLightboxOpen(false)} className="absolute top-3 right-3 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-1.5"><X className="h-5 w-5" /></button>
+            <div className="absolute top-3 left-3 z-20 text-white/70 text-sm bg-black/50 rounded-full px-3 py-1">{lightboxIndex + 1} / {photoUrls.length}</div>
+            {photoUrls.length > 1 && <button onClick={goPrev} className="absolute left-2 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-2"><ChevronLeft className="h-6 w-6" /></button>}
+            <img src={photoUrls[lightboxIndex]} alt={`Photo ${lightboxIndex + 1}`} className="max-w-full max-h-[85vh] object-contain rounded-md" />
+            {photoUrls.length > 1 && <button onClick={goNext} className="absolute right-2 z-20 text-white/70 hover:text-white bg-black/50 rounded-full p-2"><ChevronRight className="h-6 w-6" /></button>}
           </div>
         </div>,
         document.body
@@ -134,8 +82,9 @@ const PhotoGallery = ({ photoUrls }: { photoUrls: string[] }) => {
 };
 
 export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdownProps) => {
-  // Collapse state for vehicle cards — all expanded by default
   const [collapsedVehicles, setCollapsedVehicles] = useState<Set<number>>(new Set());
+  const [allCollapsed, setAllCollapsed] = useState(false);
+
   const toggleVehicle = (idx: number) => {
     setCollapsedVehicles(prev => {
       const next = new Set(prev);
@@ -143,6 +92,16 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
       return next;
     });
   };
+
+  const toggleAll = () => {
+    if (allCollapsed) {
+      setCollapsedVehicles(new Set());
+    } else {
+      setCollapsedVehicles(new Set(filteredVehicles.map((_, i) => i)));
+    }
+    setAllCollapsed(!allCollapsed);
+  };
+
   const formatDate = (date: Date | string) => {
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return 'N/A';
@@ -165,9 +124,9 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
   const allowedStatuses = filter ? statusMap[filter] : null;
 
   const filteredVehicles = costSummary.vehicles
-    .map((vehicleSummary) => {
+    .map(vehicleSummary => {
       const sessions = allowedStatuses
-        ? vehicleSummary.sessions.filter((s) => allowedStatuses.includes(s.status))
+        ? vehicleSummary.sessions.filter(s => allowedStatuses.includes(s.status))
         : vehicleSummary.sessions;
       const totalLabor = sessions.reduce((sum, s) => sum + s.laborCost, 0);
       const totalParts = sessions.reduce((sum, s) => sum + s.partsCost, 0);
@@ -178,7 +137,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
       const totalAllKeysLost = sessions.reduce((sum, s) => sum + (s.allKeysLostCost || 0), 0);
       return { ...vehicleSummary, sessions, totalLabor, totalParts, totalCloning, totalProgramming, totalMinHourAdj, totalAddKey, totalAllKeysLost, vehicleTotal: totalLabor + totalParts };
     })
-    .filter((v) => v.sessions.length > 0);
+    .filter(v => v.sessions.length > 0);
 
   const grandTotalLabor = filteredVehicles.reduce((sum, v) => sum + v.totalLabor, 0);
   const grandTotalParts = filteredVehicles.reduce((sum, v) => sum + v.totalParts, 0);
@@ -194,13 +153,11 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
     const now = new Date();
     const cutoff = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     const monthMap = new Map<string, { month: string; money: number; cars: Set<string> }>();
-
     filteredVehicles.forEach(v => {
       const allDates = v.sessions.map(s => new Date(s.date).getTime());
       if (allDates.length === 0) return;
       const lastStopDate = new Date(Math.max(...allDates));
       if (lastStopDate < cutoff) return;
-
       const key = `${lastStopDate.getFullYear()}-${String(lastStopDate.getMonth() + 1).padStart(2, '0')}`;
       const label = lastStopDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (!monthMap.has(key)) monthMap.set(key, { month: label, money: 0, cars: new Set() });
@@ -208,9 +165,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
       entry.money += v.sessions.reduce((sum, s) => sum + s.laborCost + s.partsCost, 0);
       entry.cars.add(v.vehicle.vin);
     });
-
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
+    return Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b))
       .map(([_, v]) => ({ month: v.month, money: Math.round(v.money * 100) / 100, cars: v.cars.size }));
   }, [filteredVehicles, filter]);
 
@@ -221,229 +176,11 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-5">
       {/* Client greeting */}
       <div className="text-center py-2">
-        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-          Hello, {costSummary.client.name}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">Your cost breakdown</p>
-      </div>
-
-      {/* Vehicle sections */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
-        {filteredVehicles.map((vehicleSummary, vIdx) => {
-          const v = vehicleSummary.vehicle;
-          const vehicleName = [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle';
-          const diagnosticPdfUrl = vehicleSummary.sessions.find(s => s.diagnosticPdfUrl)?.diagnosticPdfUrl;
-          const isCollapsed = collapsedVehicles.has(vIdx);
-          const vehicleTotal = vehicleSummary.vehicleTotal;
-          const deposit = v.prepaidAmount || 0;
-          const balanceDue = Math.max(0, vehicleTotal - deposit);
-
-          return (
-            <Card key={vIdx} className="overflow-hidden">
-              <button
-                onClick={() => toggleVehicle(vIdx)}
-                className="w-full text-left py-3 px-4 md:py-4 md:px-6 bg-primary/10 hover:bg-primary/15 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Car className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
-                    <span className="text-sm md:text-lg font-bold truncate">{vehicleName}</span>
-                    {v.color && (
-                      <Badge variant="outline" className="text-[10px] md:text-xs shrink-0">
-                        {v.color}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {vehicleTotal > 0 && (
-                      <span className={`text-sm font-bold ${deposit > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {deposit > 0 ? `Due: ${formatCurrency(balanceDue)}` : formatCurrency(vehicleTotal)}
-                      </span>
-                    )}
-                    {isCollapsed
-                      ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      : <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    }
-                  </div>
-                </div>
-                {v.vin && (
-                  <p
-                    className="text-xs text-muted-foreground font-mono mt-0.5 text-left hover:text-foreground transition-colors"
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(v.vin); toast({ title: 'VIN Copied!', description: v.vin }); }}
-                    title="Click to copy VIN"
-                  >
-                    VIN: {v.vin}
-                  </p>
-                )}
-                {diagnosticPdfUrl && (
-                  <a
-                    href={diagnosticPdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors mt-1"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    View Diagnostic Report
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </button>
-              {!isCollapsed && (
-              <CardContent className="p-0">
-                {vehicleSummary.sessions.map((session, sIdx) => (
-                  <div key={sIdx} className="border-b last:border-b-0 p-4 md:p-6 space-y-2 md:space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm md:text-lg font-semibold text-foreground">
-                          Session {sIdx + 1} — {formatDate(session.date)}
-                        </p>
-                        <p className="text-xs md:text-sm text-muted-foreground italic mt-0.5">
-                          "{session.description}"
-                        </p>
-                      </div>
-                      <Badge variant="outline" className={`text-[10px] md:text-xs ${statusColors[session.status] || ''}`}>
-                        {session.status}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs md:text-sm">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {formatRoundedDuration(session.duration)}
-                      </span>
-                      <span className="flex items-center gap-1 font-semibold text-foreground">
-                        <DollarSign className="h-3 w-3" />
-                        Labor: {formatCurrency(session.laborCost - (session.cloningCost || 0) - (session.programmingCost || 0) - (session.minHourAdj || 0) - (session.addKeyCost || 0) - (session.allKeysLostCost || 0))}
-                      </span>
-                    </div>
-                    {session.periods && session.periods.length > 0 && (
-                      <div className="flex flex-col gap-0.5 text-[10px] md:text-xs text-muted-foreground">
-                        {session.periods.map((period, pIdx) => (
-                          <span key={pIdx}>🕐 <span className="text-green-500 font-medium">{formatTimeOnly(period.start)}</span><span className="text-muted-foreground"> → </span><span className="text-red-500 font-medium">{formatTimeOnly(period.end)}</span></span>
-                        ))}
-                      </div>
-                    )}
-                    {((session.minHourAdj || 0) > 0 || (session.cloningCost || 0) > 0 || (session.programmingCost || 0) > 0 || (session.addKeyCost || 0) > 0 || (session.allKeysLostCost || 0) > 0) && (
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                        {(session.minHourAdj || 0) > 0 && <span>🚩 Min 1hr: {formatCurrency(session.minHourAdj)}</span>}
-                        {(session.cloningCost || 0) > 0 && <span>📋 Cloning: {formatCurrency(session.cloningCost)}</span>}
-                        {(session.programmingCost || 0) > 0 && <span>💻 Programming: {formatCurrency(session.programmingCost)}</span>}
-                        {(session.addKeyCost || 0) > 0 && <span>🔑 Add Key: {formatCurrency(session.addKeyCost)}</span>}
-                        {(session.allKeysLostCost || 0) > 0 && <span>🗝️ All Keys Lost: {formatCurrency(session.allKeysLostCost)}</span>}
-                      </div>
-                    )}
-
-                    {/* Photo gallery */}
-                    {session.photoUrls && session.photoUrls.length > 0 && (
-                      <PhotoGallery photoUrls={session.photoUrls} />
-                    )}
-
-
-                    {session.parts.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs md:text-sm font-semibold flex items-center gap-1 mb-1">
-                          <Wrench className="h-3 w-3" /> Parts
-                        </p>
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="text-[10px]">
-                              <TableHead className="h-7 px-2 text-xs md:text-sm">Part</TableHead>
-                              <TableHead className="h-7 px-2 text-xs md:text-sm text-center">Qty</TableHead>
-                              <TableHead className="h-7 px-2 text-xs md:text-sm text-right">Price</TableHead>
-                              <TableHead className="h-7 px-2 text-xs md:text-sm text-right">Total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {session.parts.map((part, pIdx) => (
-                              <TableRow key={pIdx} className="text-xs md:text-sm">
-                                <TableCell className="py-1 px-2">{part.name}</TableCell>
-                                <TableCell className="py-1 px-2 text-center">{part.quantity}</TableCell>
-                                <TableCell className="py-1 px-2 text-right">{formatCurrency(part.price)}</TableCell>
-                                <TableCell className="py-1 px-2 text-right font-medium">
-                                  {formatCurrency(part.price * part.quantity)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                        <p className="text-xs md:text-sm font-semibold text-right mt-1 pr-2">
-                          Parts Total: {formatCurrency(session.partsCost)}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="text-xs md:text-sm font-bold text-right border-t pt-1 text-foreground">
-                      Session Total: {formatCurrency(session.laborCost + session.partsCost)}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Vehicle subtotal */}
-                <div className="p-3 md:p-4 bg-muted/50 text-xs md:text-sm space-y-0.5">
-                  <div className="flex justify-between">
-                    <span>Vehicle Labor:</span>
-                    <span className="font-semibold">{formatCurrency(vehicleSummary.totalLabor - vehicleSummary.totalCloning - vehicleSummary.totalProgramming - vehicleSummary.totalMinHourAdj - (vehicleSummary.totalAddKey || 0) - (vehicleSummary.totalAllKeysLost || 0))}</span>
-                  </div>
-                  {vehicleSummary.totalMinHourAdj > 0 && (
-                    <div className="flex justify-between">
-                      <span>Min 1 Hour:</span>
-                      <span className="font-semibold">{formatCurrency(vehicleSummary.totalMinHourAdj)}</span>
-                    </div>
-                  )}
-                  {vehicleSummary.totalCloning > 0 && (
-                    <div className="flex justify-between">
-                      <span>Cloning:</span>
-                      <span className="font-semibold">{formatCurrency(vehicleSummary.totalCloning)}</span>
-                    </div>
-                  )}
-                  {vehicleSummary.totalProgramming > 0 && (
-                    <div className="flex justify-between">
-                      <span>Programming:</span>
-                      <span className="font-semibold">{formatCurrency(vehicleSummary.totalProgramming)}</span>
-                    </div>
-                   )}
-                  {(vehicleSummary.totalAddKey || 0) > 0 && (
-                    <div className="flex justify-between">
-                      <span>Add Key:</span>
-                      <span className="font-semibold">{formatCurrency(vehicleSummary.totalAddKey)}</span>
-                    </div>
-                  )}
-                  {(vehicleSummary.totalAllKeysLost || 0) > 0 && (
-                    <div className="flex justify-between">
-                      <span>All Keys Lost:</span>
-                      <span className="font-semibold">{formatCurrency(vehicleSummary.totalAllKeysLost)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Vehicle Parts:</span>
-                    <span className="font-semibold">{formatCurrency(vehicleSummary.totalParts)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-sm border-t pt-1 mt-1">
-                    <span>Vehicle Total:</span>
-                    <span>{formatCurrency(vehicleSummary.vehicleTotal)}</span>
-                  </div>
-                  {(vehicleSummary.vehicle.prepaidAmount || 0) > 0 && (
-                    <>
-                      <div className="flex justify-between text-sm text-destructive">
-                        <span>Deposit:</span>
-                        <span className="font-semibold">-{formatCurrency(vehicleSummary.vehicle.prepaidAmount!)}</span>
-                      </div>
-                      <div className="flex justify-between font-bold text-sm text-orange-500">
-                        <span>Balance Due:</span>
-                        <span>{formatCurrency(Math.max(0, vehicleSummary.vehicleTotal - vehicleSummary.vehicle.prepaidAmount!))}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-              )}
-            </Card>
-          );
-        })}
+        <h2 className="text-xl md:text-2xl font-bold text-foreground">Hello, {costSummary.client.name}</h2>
+        <p className="text-sm text-muted-foreground mt-1">Your service records</p>
       </div>
 
       {filteredVehicles.length === 0 && (
@@ -452,155 +189,261 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
         </div>
       )}
 
-      {/* Grand total */}
       {filteredVehicles.length > 0 && (
-        <Card className="bg-primary/5 border-primary/30 md:max-w-lg md:mx-auto">
-          <CardContent className="p-4 space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>Total Labor:</span>
-              <span className="font-semibold">{formatCurrency(grandTotalLabor - grandTotalCloning - grandTotalProgramming - grandTotalMinHourAdj - grandTotalAddKey - grandTotalAllKeysLost)}</span>
-            </div>
-            {grandTotalMinHourAdj > 0 && (
-              <div className="flex justify-between text-sm">
-                <span>Min 1 Hour:</span>
-                <span className="font-semibold">{formatCurrency(grandTotalMinHourAdj)}</span>
-              </div>
-            )}
-            {grandTotalCloning > 0 && (
-              <div className="flex justify-between text-sm">
-                <span>Cloning:</span>
-                <span className="font-semibold">{formatCurrency(grandTotalCloning)}</span>
-              </div>
-            )}
-            {grandTotalProgramming > 0 && (
-              <div className="flex justify-between text-sm">
-                <span>Programming:</span>
-                <span className="font-semibold">{formatCurrency(grandTotalProgramming)}</span>
-              </div>
-            )}
-            {grandTotalAddKey > 0 && (
-              <div className="flex justify-between text-sm">
-                <span>Add Key:</span>
-                <span className="font-semibold">{formatCurrency(grandTotalAddKey)}</span>
-              </div>
-            )}
-            {grandTotalAllKeysLost > 0 && (
-              <div className="flex justify-between text-sm">
-                <span>All Keys Lost:</span>
-                <span className="font-semibold">{formatCurrency(grandTotalAllKeysLost)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm">
-              <span>Total Parts:</span>
-              <span className="font-semibold">{formatCurrency(grandTotalParts)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2 text-primary">
-              <span>GRAND TOTAL:</span>
-              <span>{formatCurrency(grandTotal)}</span>
-            </div>
-            {(() => {
-              const vehicleDeposits = filteredVehicles.reduce((sum, v) => sum + (v.vehicle.prepaidAmount || 0), 0);
-              const clientDeposit = costSummary.client.prepaidAmount || 0;
-              const totalDeposits = vehicleDeposits + clientDeposit;
-              if (totalDeposits <= 0) return null;
-              return (
-                <>
-                  {vehicleDeposits > 0 && (
-                    <div className="flex justify-between text-sm text-destructive">
-                      <span>Vehicle Deposits:</span>
-                      <span className="font-semibold">-{formatCurrency(vehicleDeposits)}</span>
-                    </div>
-                  )}
-                  {clientDeposit > 0 && (
-                    <div className="flex justify-between text-sm text-destructive">
-                      <span>Client Deposit:</span>
-                      <span className="font-semibold">-{formatCurrency(clientDeposit)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-lg font-bold text-orange-500">
-                    <span>BALANCE DUE:</span>
-                    <span>{formatCurrency(Math.max(0, grandTotal - totalDeposits))}</span>
-                  </div>
-                </>
-              );
-            })()}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Payment methods */}
-      {filteredVehicles.length > 0 && (costSummary.paymentMethods?.length ?? 0) > 0 && (
-        <div className="flex flex-col items-center gap-2">
-          {costSummary.paymentMethods!.map((method, idx) => (
-            <Button
-              key={idx}
-              size="lg"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8 w-full max-w-xs"
-              onClick={() => window.open(method.url, '_blank')}
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? 's' : ''} · {filteredVehicles.reduce((s, v) => s + v.sessions.length, 0)} sessions
+            </p>
+            <button
+              onClick={toggleAll}
+              className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors"
             >
-              <DollarSign className="h-5 w-5 mr-1" />
-              Pay via {method.label}
-            </Button>
-          ))}
-        </div>
-      )}
+              {allCollapsed ? 'Expand all ↓' : 'Collapse all ↑'}
+            </button>
+          </div>
 
-      {/* Legacy single payment link fallback */}
-      {costSummary.paymentLink && filteredVehicles.length > 0 && !(costSummary.paymentMethods?.length) && (
-        <div className="flex justify-center">
-          <Button
-            size="lg"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8"
-            onClick={() => window.open(costSummary.paymentLink!, '_blank')}
-          >
-            <DollarSign className="h-5 w-5 mr-1" />
-            Pay Now{costSummary.paymentLabel ? ` via ${costSummary.paymentLabel}` : ''}
-          </Button>
-        </div>
-      )}
+          {/* Accordion */}
+          <div className="space-y-2">
+            {filteredVehicles.map((vehicleSummary, vIdx) => {
+              const v = vehicleSummary.vehicle;
+              const vehicleName = [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle';
+              const isCollapsed = collapsedVehicles.has(vIdx);
+              const deposit = v.prepaidAmount || 0;
+              const balanceDue = Math.max(0, vehicleSummary.vehicleTotal - deposit);
+              const diagnosticPdfUrl = vehicleSummary.sessions.find(s => s.diagnosticPdfUrl)?.diagnosticPdfUrl;
 
-      {/* Paid tab charts */}
-      {filter === 'paid' && monthlyData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm md:text-base">Revenue by Month</CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 md:p-4">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-                  <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" tickFormatter={(v) => `$${v}`} />
-                  <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
-                  <Bar dataKey="money" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              return (
+                <div key={vIdx} className="border border-border rounded-xl overflow-hidden bg-card">
+                  {/* Accordion header — tap to collapse */}
+                  <button
+                    onClick={() => toggleVehicle(vIdx)}
+                    className="w-full text-left px-4 py-3 bg-primary/8 hover:bg-primary/12 transition-colors flex items-center gap-3"
+                  >
+                    <Car className="h-4 w-4 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm truncate">{vehicleName}</span>
+                        {v.color && <Badge variant="outline" className="text-[10px] shrink-0">{v.color}</Badge>}
+                      </div>
+                      {v.vin && (
+                        <p
+                          className="text-xs text-muted-foreground font-mono mt-0.5 text-left"
+                          onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(v.vin); toast({ title: 'VIN Copied!', description: v.vin }); }}
+                          title="Click to copy VIN"
+                        >
+                          {v.vin}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {vehicleSummary.vehicleTotal > 0 && (
+                        <span className={`text-sm font-bold ${deposit > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {deposit > 0 ? formatCurrency(balanceDue) : formatCurrency(vehicleSummary.vehicleTotal)}
+                        </span>
+                      )}
+                      {isCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                  </button>
+
+                  {/* Accordion body */}
+                  {!isCollapsed && (
+                    <div>
+                      {diagnosticPdfUrl && (
+                        <div className="px-4 py-2 border-b border-border bg-muted/30">
+                          <a href={diagnosticPdfUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500">
+                            <FileText className="h-3.5 w-3.5" />View Diagnostic Report<ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+
+                      {vehicleSummary.sessions.map((session, sIdx) => (
+                        <div key={sIdx} className="border-b last:border-b-0 px-4 py-3 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{sIdx + 1}</span>
+                                <p className="text-sm font-semibold text-foreground">{formatDate(session.date)}</p>
+                              </div>
+                              {session.description && (
+                                <p className="text-xs text-muted-foreground italic mt-0.5 ml-7">"{session.description}"</p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className={`text-[10px] shrink-0 ${statusColors[session.status] || ''}`}>{session.status}</Badge>
+                          </div>
+
+                          <div className="ml-7 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="h-3 w-3" />{formatRoundedDuration(session.duration)}
+                            </span>
+                            <span className="flex items-center gap-1 font-semibold text-foreground">
+                              <DollarSign className="h-3 w-3" />
+                              {formatCurrency(session.laborCost - (session.cloningCost || 0) - (session.programmingCost || 0) - (session.minHourAdj || 0) - (session.addKeyCost || 0) - (session.allKeysLostCost || 0))}
+                            </span>
+                          </div>
+
+                          {session.periods && session.periods.length > 0 && (
+                            <div className="ml-7 flex flex-col gap-0.5 text-[10px] text-muted-foreground">
+                              {session.periods.map((period, pIdx) => (
+                                <span key={pIdx}>🕐 <span className="text-green-500 font-medium">{formatTimeOnly(period.start)}</span><span> → </span><span className="text-red-500 font-medium">{formatTimeOnly(period.end)}</span></span>
+                              ))}
+                            </div>
+                          )}
+
+                          {((session.minHourAdj || 0) > 0 || (session.cloningCost || 0) > 0 || (session.programmingCost || 0) > 0 || (session.addKeyCost || 0) > 0 || (session.allKeysLostCost || 0) > 0) && (
+                            <div className="ml-7 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                              {(session.minHourAdj || 0) > 0 && <span>🚩 Min 1hr: {formatCurrency(session.minHourAdj)}</span>}
+                              {(session.cloningCost || 0) > 0 && <span>📋 Cloning: {formatCurrency(session.cloningCost)}</span>}
+                              {(session.programmingCost || 0) > 0 && <span>💻 Programming: {formatCurrency(session.programmingCost)}</span>}
+                              {(session.addKeyCost || 0) > 0 && <span>🔑 Add Key: {formatCurrency(session.addKeyCost)}</span>}
+                              {(session.allKeysLostCost || 0) > 0 && <span>🗝️ All Keys Lost: {formatCurrency(session.allKeysLostCost)}</span>}
+                            </div>
+                          )}
+
+                          {session.photoUrls && session.photoUrls.length > 0 && (
+                            <div className="ml-7"><PhotoGallery photoUrls={session.photoUrls} /></div>
+                          )}
+
+                          {session.parts.length > 0 && (
+                            <div className="ml-7 mt-1">
+                              <p className="text-xs font-semibold flex items-center gap-1 mb-1"><Wrench className="h-3 w-3" /> Parts</p>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="text-[10px]">
+                                    <TableHead className="h-6 px-2 text-xs">Part</TableHead>
+                                    <TableHead className="h-6 px-2 text-xs text-center">Qty</TableHead>
+                                    <TableHead className="h-6 px-2 text-xs text-right">Total</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {session.parts.map((part, pIdx) => (
+                                    <TableRow key={pIdx} className="text-xs">
+                                      <TableCell className="py-1 px-2">{part.name}</TableCell>
+                                      <TableCell className="py-1 px-2 text-center">{part.quantity}</TableCell>
+                                      <TableCell className="py-1 px-2 text-right font-medium">{formatCurrency(part.price * part.quantity)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+
+                          <div className="ml-7 text-xs font-bold text-right border-t pt-1 text-foreground">
+                            Session total: {formatCurrency(session.laborCost + session.partsCost)}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Vehicle subtotal */}
+                      <div className="px-4 py-2.5 bg-muted/40 text-xs space-y-0.5">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Labor:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalLabor - vehicleSummary.totalCloning - vehicleSummary.totalProgramming - vehicleSummary.totalMinHourAdj - (vehicleSummary.totalAddKey || 0) - (vehicleSummary.totalAllKeysLost || 0))}</span></div>
+                        {vehicleSummary.totalMinHourAdj > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Min 1 Hour:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalMinHourAdj)}</span></div>}
+                        {vehicleSummary.totalCloning > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cloning:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalCloning)}</span></div>}
+                        {vehicleSummary.totalProgramming > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Programming:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalProgramming)}</span></div>}
+                        {(vehicleSummary.totalAddKey || 0) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Add Key:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalAddKey)}</span></div>}
+                        {(vehicleSummary.totalAllKeysLost || 0) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">All Keys Lost:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalAllKeysLost)}</span></div>}
+                        <div className="flex justify-between"><span className="text-muted-foreground">Parts:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalParts)}</span></div>
+                        <div className="flex justify-between font-bold text-sm border-t pt-1 mt-1"><span>Vehicle total:</span><span>{formatCurrency(vehicleSummary.vehicleTotal)}</span></div>
+                        {deposit > 0 && (
+                          <>
+                            <div className="flex justify-between text-destructive"><span>Deposit:</span><span className="font-semibold">-{formatCurrency(deposit)}</span></div>
+                            <div className="flex justify-between font-bold text-orange-600"><span>Balance due:</span><span>{formatCurrency(balanceDue)}</span></div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Grand total */}
+          <Card className="bg-primary/5 border-primary/30 md:max-w-lg md:mx-auto">
+            <CardContent className="p-4 space-y-1">
+              <div className="flex justify-between text-sm"><span>Total Labor:</span><span className="font-semibold">{formatCurrency(grandTotalLabor - grandTotalCloning - grandTotalProgramming - grandTotalMinHourAdj - grandTotalAddKey - grandTotalAllKeysLost)}</span></div>
+              {grandTotalMinHourAdj > 0 && <div className="flex justify-between text-sm"><span>Min 1 Hour:</span><span className="font-semibold">{formatCurrency(grandTotalMinHourAdj)}</span></div>}
+              {grandTotalCloning > 0 && <div className="flex justify-between text-sm"><span>Cloning:</span><span className="font-semibold">{formatCurrency(grandTotalCloning)}</span></div>}
+              {grandTotalProgramming > 0 && <div className="flex justify-between text-sm"><span>Programming:</span><span className="font-semibold">{formatCurrency(grandTotalProgramming)}</span></div>}
+              {grandTotalAddKey > 0 && <div className="flex justify-between text-sm"><span>Add Key:</span><span className="font-semibold">{formatCurrency(grandTotalAddKey)}</span></div>}
+              {grandTotalAllKeysLost > 0 && <div className="flex justify-between text-sm"><span>All Keys Lost:</span><span className="font-semibold">{formatCurrency(grandTotalAllKeysLost)}</span></div>}
+              <div className="flex justify-between text-sm"><span>Total Parts:</span><span className="font-semibold">{formatCurrency(grandTotalParts)}</span></div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2 text-primary"><span>GRAND TOTAL:</span><span>{formatCurrency(grandTotal)}</span></div>
+              {(() => {
+                const vehicleDeposits = filteredVehicles.reduce((sum, v) => sum + (v.vehicle.prepaidAmount || 0), 0);
+                const clientDeposit = costSummary.client.prepaidAmount || 0;
+                const totalDeposits = vehicleDeposits + clientDeposit;
+                if (totalDeposits <= 0) return null;
+                return (
+                  <>
+                    {vehicleDeposits > 0 && <div className="flex justify-between text-sm text-destructive"><span>Vehicle Deposits:</span><span className="font-semibold">-{formatCurrency(vehicleDeposits)}</span></div>}
+                    {clientDeposit > 0 && <div className="flex justify-between text-sm text-destructive"><span>Client Deposit:</span><span className="font-semibold">-{formatCurrency(clientDeposit)}</span></div>}
+                    <div className="flex justify-between text-lg font-bold text-orange-500"><span>BALANCE DUE:</span><span>{formatCurrency(Math.max(0, grandTotal - totalDeposits))}</span></div>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm md:text-base">Cars by Month</CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 md:p-4">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-                  <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" allowDecimals={false} />
-                  <Tooltip formatter={(value: number) => [value, 'Cars']} />
-                  <Bar dataKey="cars" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
-      {/* Vehicle count footer */}
-      <p className="text-xs text-muted-foreground text-center py-4">
-        Showing {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? 's' : ''}
-      </p>
+          {/* Payment methods */}
+          {(costSummary.paymentMethods?.length ?? 0) > 0 && (
+            <div className="flex flex-col items-center gap-2">
+              {costSummary.paymentMethods!.map((method, idx) => (
+                <Button key={idx} size="lg"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8 w-full max-w-xs"
+                  onClick={() => window.open(method.url, '_blank')}>
+                  <DollarSign className="h-5 w-5 mr-1" />Pay via {method.label}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {costSummary.paymentLink && !(costSummary.paymentMethods?.length) && (
+            <div className="flex justify-center">
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8"
+                onClick={() => window.open(costSummary.paymentLink!, '_blank')}>
+                <DollarSign className="h-5 w-5 mr-1" />Pay Now{costSummary.paymentLabel ? ` via ${costSummary.paymentLabel}` : ''}
+              </Button>
+            </div>
+          )}
+
+          {/* Paid charts */}
+          {filter === 'paid' && monthlyData.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="py-3 px-4"><CardTitle className="text-sm">Revenue by Month</CardTitle></CardHeader>
+                <CardContent className="p-2 md:p-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} />
+                      <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                      <Bar dataKey="money" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="py-3 px-4"><CardTitle className="text-sm">Cars by Month</CardTitle></CardHeader>
+                <CardContent className="p-2 md:p-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip formatter={(value: number) => [value, 'Cars']} />
+                      <Bar dataKey="cars" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

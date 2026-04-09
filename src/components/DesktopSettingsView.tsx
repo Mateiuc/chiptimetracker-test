@@ -25,6 +25,9 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(
     settings.paymentMethods || (settings.paymentLink ? [{ label: settings.paymentLabel || 'Pay', url: settings.paymentLink }] : [])
   );
+  const [portalLogoUrl, setPortalLogoUrl] = useState(settings.portalLogoUrl || '');
+  const [portalBgColor, setPortalBgColor] = useState(settings.portalBgColor || '#1d4ed8');
+  const [portalBusinessName, setPortalBusinessName] = useState(settings.portalBusinessName || '');
 
   useEffect(() => {
     setDefaultHourlyRate(settings.defaultHourlyRate?.toString() || '75');
@@ -48,6 +51,9 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
       defaultAddKeyRate: defaultAddKeyRate ? parseFloat(defaultAddKeyRate) : undefined,
       defaultAllKeysLostRate: defaultAllKeysLostRate ? parseFloat(defaultAllKeysLostRate) : undefined,
       paymentMethods: paymentMethods.filter(m => m.label.trim() && m.url.trim()),
+      portalLogoUrl: portalLogoUrl.trim() || undefined,
+      portalBgColor: portalBgColor || '#1d4ed8',
+      portalBusinessName: portalBusinessName.trim() || undefined,
     });
     toast({ title: 'Settings Saved' });
   };
@@ -237,6 +243,62 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
         </CardHeader>
         <CardContent>
           <BackupView onBack={() => {}} />
+        </CardContent>
+      </Card>
+
+      {/* Client Portal Branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Client Portal Branding</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label className="text-xs">Business Name</Label>
+            <Input
+              value={portalBusinessName}
+              onChange={e => setPortalBusinessName(e.target.value)}
+              placeholder="e.g. ChipTime Auto Keys"
+            />
+            <p className="text-xs text-muted-foreground">Shown in the portal header instead of "Service Portal"</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Logo URL</Label>
+            <Input
+              value={portalLogoUrl}
+              onChange={e => setPortalLogoUrl(e.target.value)}
+              placeholder="https://yoursite.com/logo.png"
+            />
+            <p className="text-xs text-muted-foreground">Paste a public image URL — shown in the portal header</p>
+            {portalLogoUrl && (
+              <div className="mt-2 p-2 bg-muted rounded-lg inline-block">
+                <img src={portalLogoUrl} alt="Logo preview" className="h-10 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+              </div>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Header Color</Label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={portalBgColor}
+                onChange={e => setPortalBgColor(e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer border border-border"
+              />
+              <Input
+                value={portalBgColor}
+                onChange={e => setPortalBgColor(e.target.value)}
+                placeholder="#1d4ed8"
+                className="w-36 font-mono text-sm"
+              />
+              <div
+                className="flex-1 h-10 rounded-lg flex items-center justify-center text-white text-xs font-medium"
+                style={{ background: portalBgColor }}
+              >
+                {portalBusinessName || 'Service Portal'} — Preview
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Background color of the portal header bar</p>
+          </div>
         </CardContent>
       </Card>
 

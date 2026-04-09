@@ -132,4 +132,8 @@ export interface Settings {
   paymentLink?: string; // @deprecated - use paymentMethods instead
   paymentLabel?: string; // @deprecated - use paymentMethods instead
   paymentMethods?: PaymentMethod[];
+  // Client portal branding
+  portalLogoUrl?: string;       // URL or base64 of shop logo
+  portalBgColor?: string;       // hex color for portal header gradient
+  portalBusinessName?: string;  // shown in portal header instead of "Service Portal"
 }

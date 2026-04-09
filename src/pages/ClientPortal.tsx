@@ -125,7 +125,6 @@ const ClientPortal = () => {
             <p className="text-xs text-blue-300/70">Secure client access</p>
           </div>
         </header>
-
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-sm space-y-6">
             {/* Lock icon */}
@@ -198,15 +197,26 @@ const ClientPortal = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-10">
+      <header className="shadow-lg sticky top-0 z-10" style={{ background: costSummary?.portalBgColor || '#1d4ed8' }}>
         <div className="px-4 py-3 max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-white/20 rounded-lg p-1.5">
-                <Wrench className="h-5 w-5 text-white" />
-              </div>
+              {costSummary?.portalLogoUrl ? (
+                <img
+                  src={costSummary.portalLogoUrl}
+                  alt="logo"
+                  className="h-8 w-8 rounded-lg object-contain bg-white/20 p-0.5"
+                  onError={e => (e.currentTarget.style.display = 'none')}
+                />
+              ) : (
+                <div className="bg-white/20 rounded-lg p-1.5">
+                  <Wrench className="h-5 w-5 text-white" />
+                </div>
+              )}
               <div>
-                <p className="font-bold text-white text-sm leading-tight">Service Portal</p>
+                <p className="font-bold text-white text-sm leading-tight">
+                  {costSummary?.portalBusinessName || 'Service Portal'}
+                </p>
                 {costSummary && (
                   <p className="text-blue-100/80 text-xs leading-tight">Hello, {costSummary.client.name}</p>
                 )}
