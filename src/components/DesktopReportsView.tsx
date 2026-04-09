@@ -276,11 +276,11 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Filter Toolbar */}
-      <div className="sticky top-0 z-10 bg-card border rounded-lg p-4 shadow-sm space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Filter Toolbar — single row */}
+      <div className="sticky top-0 z-10 bg-card border rounded-lg px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={rptClient} onValueChange={v => { setRptClient(v); setRptVehicle('all'); }}>
-            <SelectTrigger className="w-[180px] h-8 text-sm"><SelectValue placeholder="All Clients" /></SelectTrigger>
+            <SelectTrigger className="w-[160px] h-8 text-sm"><SelectValue placeholder="All Clients" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Clients</SelectItem>
               {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -288,7 +288,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
           </Select>
 
           <Select value={rptVehicle} onValueChange={setRptVehicle}>
-            <SelectTrigger className="w-[200px] h-8 text-sm"><SelectValue placeholder="All Vehicles" /></SelectTrigger>
+            <SelectTrigger className="w-[180px] h-8 text-sm"><SelectValue placeholder="All Vehicles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Vehicles</SelectItem>
               {availableVehicles.map(v => (
@@ -315,10 +315,10 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
             <RotateCcw className="h-3 w-3 mr-1" /> Reset
           </Button>
 
-          <div className="ml-auto flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
             <span><strong className="text-foreground">{filteredTasks.length}</strong> tasks</span>
             <span><strong className="text-foreground">{formatCurrency(totalRevenue)}</strong> revenue</span>
-            <span><strong className="text-foreground">{totalHours.toFixed(1)}</strong> hours</span>
+            <span><strong className="text-foreground">{totalHours.toFixed(1)}</strong> hrs</span>
           </div>
         </div>
       </div>
