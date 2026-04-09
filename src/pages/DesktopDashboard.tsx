@@ -1170,32 +1170,34 @@ const DesktopDashboard = () => {
                 const clientRevenue = clientVehicles.flatMap(v => v.tasks).reduce((sum, t) => sum + getTaskCost(t), 0);
                 const taskCount = clientVehicles.flatMap(v => v.tasks).length;
                 const isSelected = selectedClientId === client.id;
+                const clientColor = getVehicleColorScheme(client.id);
+                const clientDeposits = clientVehicles.reduce((sum, cv) => sum + (cv.vehicle?.prepaidAmount || 0), 0) + (client.prepaidAmount || 0);
+                const balanceDue = Math.max(0, clientRevenue - clientDeposits);
 
                 return (
                   <button
                     key={client.id}
                     onClick={() => setSelectedClientId(isSelected ? null : client.id)}
-                    className={`w-full text-left px-3 py-2.5 border-b border-border/50 transition-colors ${
-                      isSelected
-                        ? 'bg-primary/10 border-l-4 border-l-primary'
-                        : 'hover:bg-muted/50 border-l-4 border-l-transparent'
+                    className={`w-full text-left px-3 py-2.5 rounded-xl border-2 mb-2 transition-all ${clientColor.border} ${clientColor.gradient} ${
+                      isSelected ? 'ring-2 ring-primary ring-offset-1' : 'hover:shadow-sm'
                     }`}
                   >
-                    <div className="font-semibold text-sm truncate">{client.name}</div>
-                    {(() => {
-                      const clientDeposits = clientVehicles.reduce((sum, cv) => sum + (cv.vehicle?.prepaidAmount || 0), 0) + (client.prepaidAmount || 0);
-                      const balanceDue = Math.max(0, clientRevenue - clientDeposits);
-                      return (
-                        <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                          <span>{clientVehicles.length} vehicles · {taskCount} tasks</span>
-                          {clientRevenue > 0 && (
-                            <span className={`font-semibold ${clientDeposits > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                              {clientDeposits > 0 ? `Due: ${formatCurrency(balanceDue)}` : formatCurrency(clientRevenue)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    <div className="font-bold text-sm truncate">{client.name}</div>
+                    {client.companyName && <div className="text-xs text-muted-foreground truncate">{client.companyName}</div>}
+                    <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{clientVehicles.length} vehicles · {taskCount} tasks</span>
+                      {clientRevenue > 0 && (
+                        <span className={`font-semibold ${
+                          clientDeposits > 0 ? 'text-orange-600 dark:text-orange-400' :
+                          filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                          filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                          filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                          'text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          {clientDeposits > 0 ? `Due: ${formatCurrency(balanceDue)}` : formatCurrency(clientRevenue)}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -1231,7 +1233,13 @@ const DesktopDashboard = () => {
                           const balanceDue = Math.max(0, clientRevenue - clientDeposits);
                           return (
                             <div className="mt-2">
-                              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(clientRevenue)}</div>
+                              <div className={`text-lg font-bold ${
+                              clientDeposits > 0 ? 'text-orange-600 dark:text-orange-400' :
+                              filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                              filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                              filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                              'text-emerald-600 dark:text-emerald-400'
+                            }`}>{formatCurrency(clientRevenue)}</div>
                               {clientDeposits > 0 && (
                                 <>
                                   <div className="text-xs font-semibold text-red-500">Deposit: -{formatCurrency(clientDeposits)}</div>
@@ -1393,7 +1401,12 @@ const DesktopDashboard = () => {
                               if (clientRevenue <= 0) return null;
                               return (
                                 <div className="flex items-center gap-3 mt-1 text-xs flex-wrap">
-                                  <span className="text-green-600 font-semibold">Total: {formatCurrency(clientRevenue)}</span>
+                                  <span className={`font-semibold ${
+                                    filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                                    filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                                    filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                                    'text-emerald-600 dark:text-emerald-400'
+                                  }`}>Total: {formatCurrency(clientRevenue)}</span>
                                   {(vehicleDeps > 0 || clientDep > 0) && balanceDue > 0 && (
                                     <span className="text-orange-600 font-bold">Due: {formatCurrency(balanceDue)}</span>
                                   )}
@@ -1541,7 +1554,12 @@ const DesktopDashboard = () => {
                               {vehicle.vin && <span className="text-xs font-mono text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(vehicle.vin); toast({ title: 'VIN Copied!', description: vehicle.vin }); }} title="Click to copy VIN">VIN: {vehicle.vin}</span>}
                               {vehicle.color && <Badge variant="outline" className="text-xs">{vehicle.color}</Badge>}
                               {vehicleCost > 0 && (
-                                <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400 ml-1">{formatCurrency(vehicleCost)}</span>
+                                <span className={`font-bold text-sm ml-1 ${
+                                  filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                                  filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                                  filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                                  'text-emerald-600 dark:text-emerald-400'
+                                }`}>{formatCurrency(vehicleCost)}</span>
                               )}
                               {(vehicle.prepaidAmount || 0) > 0 && vehicleCost > 0 && (
                                 <>
