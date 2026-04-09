@@ -119,6 +119,7 @@ export interface PaymentMethod {
   label: string;
   url: string;
   icon?: string; // emoji or identifier
+  type?: 'link' | 'card'; // link = opens URL, card = Stripe/Square card form
 }
 
 export interface Settings {

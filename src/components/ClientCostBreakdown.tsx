@@ -89,7 +89,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
   const [paySheet, setPaySheet] = useState<null | 'deposit' | number>(null);
 
   const hasPayment = (costSummary.paymentMethods?.length ?? 0) > 0 || !!costSummary.paymentLink;
-  const showPayButtons = hasPayment && filter !== 'paid';
+  const showPayButtons = hasPayment && filter === 'billed';
 
   const openPay = (target: 'deposit' | number) => {
     const methods = costSummary.paymentMethods;
@@ -470,8 +470,11 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                     className="w-full flex items-center justify-between bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3.5 rounded-xl transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Pay via {method.label}
+                      {method.type === 'card'
+                        ? <span style={{ fontSize: 18 }}>💳</span>
+                        : <DollarSign className="h-5 w-5" />
+                      }
+                      {method.label || (method.type === 'card' ? 'Pay by Card' : 'Pay')}
                     </span>
                     <ExternalLink className="h-4 w-4 opacity-70" />
                   </button>
