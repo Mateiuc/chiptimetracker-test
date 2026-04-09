@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatCurrency } from '@/lib/formatTime';
 import { Car, Clock, Wrench, DollarSign, Camera, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, FileText, ExternalLink, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getVehicleColorScheme } from '@/lib/vehicleColors';
 
 interface ClientCostBreakdownProps {
   costSummary: ClientCostSummary;
@@ -213,18 +214,19 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
               const deposit = v.prepaidAmount || 0;
               const balanceDue = Math.max(0, vehicleSummary.vehicleTotal - deposit);
               const diagnosticPdfUrl = vehicleSummary.sessions.find(s => s.diagnosticPdfUrl)?.diagnosticPdfUrl;
+              const color = getVehicleColorScheme(v.vin || String(vIdx));
 
               return (
-                <div key={vIdx} className="border border-border rounded-xl overflow-hidden bg-card">
+                <div key={vIdx} className={`border-2 rounded-xl overflow-hidden ${color.border}`}>
                   {/* Accordion header — tap to collapse */}
                   <button
                     onClick={() => toggleVehicle(vIdx)}
-                    className="w-full text-left px-4 py-3 bg-primary/8 hover:bg-primary/12 transition-colors flex items-center gap-3"
+                    className={`w-full text-left px-4 py-3 ${color.gradient} flex items-center gap-3`}
                   >
                     <Car className="h-4 w-4 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm truncate">{vehicleName}</span>
+                        <span className="font-bold text-sm truncate">{vehicleName}</span>
                         {v.color && <Badge variant="outline" className="text-[10px] shrink-0">{v.color}</Badge>}
                       </div>
                       {v.vin && (
@@ -249,7 +251,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
 
                   {/* Accordion body */}
                   {!isCollapsed && (
-                    <div>
+                    <div className="bg-card">
                       {diagnosticPdfUrl && (
                         <div className="px-4 py-2 border-b border-border bg-muted/30">
                           <a href={diagnosticPdfUrl} target="_blank" rel="noopener noreferrer"
@@ -260,11 +262,11 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                       )}
 
                       {vehicleSummary.sessions.map((session, sIdx) => (
-                        <div key={sIdx} className="border-b last:border-b-0 px-4 py-3 space-y-2">
+                        <div key={sIdx} className={`border-b last:border-b-0 mx-3 my-2 rounded-lg border ${color.session} px-3 py-2.5 space-y-2`}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">{sIdx + 1}</span>
+                                <span className="w-5 h-5 rounded-full bg-background/60 flex items-center justify-center text-[10px] font-semibold text-foreground shrink-0">{sIdx + 1}</span>
                                 <p className="text-sm font-semibold text-foreground">{formatDate(session.date)}</p>
                               </div>
                               {session.description && (
@@ -287,7 +289,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                           {session.periods && session.periods.length > 0 && (
                             <div className="ml-7 flex flex-col gap-0.5 text-[10px] text-muted-foreground">
                               {session.periods.map((period, pIdx) => (
-                                <span key={pIdx}>🕐 <span className="text-green-500 font-medium">{formatTimeOnly(period.start)}</span><span> → </span><span className="text-red-500 font-medium">{formatTimeOnly(period.end)}</span></span>
+                                <span key={pIdx}>🕐 <span className="text-green-600 dark:text-green-400 font-medium">{formatTimeOnly(period.start)}</span><span> → </span><span className="text-red-500 font-medium">{formatTimeOnly(period.end)}</span></span>
                               ))}
                             </div>
                           )}
@@ -330,14 +332,14 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                             </div>
                           )}
 
-                          <div className="ml-7 text-xs font-bold text-right border-t pt-1 text-foreground">
+                          <div className="ml-7 text-xs font-bold text-right border-t border-border/40 pt-1 text-foreground">
                             Session total: {formatCurrency(session.laborCost + session.partsCost)}
                           </div>
                         </div>
                       ))}
 
                       {/* Vehicle subtotal */}
-                      <div className="px-4 py-2.5 bg-muted/40 text-xs space-y-0.5">
+                      <div className={`mx-3 mb-3 px-3 py-2 rounded-lg text-xs space-y-0.5 ${color.card}`}>
                         <div className="flex justify-between"><span className="text-muted-foreground">Labor:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalLabor - vehicleSummary.totalCloning - vehicleSummary.totalProgramming - vehicleSummary.totalMinHourAdj - (vehicleSummary.totalAddKey || 0) - (vehicleSummary.totalAllKeysLost || 0))}</span></div>
                         {vehicleSummary.totalMinHourAdj > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Min 1 Hour:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalMinHourAdj)}</span></div>}
                         {vehicleSummary.totalCloning > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Cloning:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalCloning)}</span></div>}
@@ -345,7 +347,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                         {(vehicleSummary.totalAddKey || 0) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Add Key:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalAddKey)}</span></div>}
                         {(vehicleSummary.totalAllKeysLost || 0) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">All Keys Lost:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalAllKeysLost)}</span></div>}
                         <div className="flex justify-between"><span className="text-muted-foreground">Parts:</span><span className="font-semibold">{formatCurrency(vehicleSummary.totalParts)}</span></div>
-                        <div className="flex justify-between font-bold text-sm border-t pt-1 mt-1"><span>Vehicle total:</span><span>{formatCurrency(vehicleSummary.vehicleTotal)}</span></div>
+                        <div className="flex justify-between font-bold text-sm border-t border-border/30 pt-1 mt-1"><span>Vehicle total:</span><span>{formatCurrency(vehicleSummary.vehicleTotal)}</span></div>
                         {deposit > 0 && (
                           <>
                             <div className="flex justify-between text-destructive"><span>Deposit:</span><span className="font-semibold">-{formatCurrency(deposit)}</span></div>
