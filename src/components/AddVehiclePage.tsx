@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Client, Vehicle, Task, Settings } from '@/types';
 import { decodeVin, validateVin } from '@/lib/vinDecoder';
 import { useNotifications } from '@/hooks/useNotifications';
-import { ContactCombobox } from './ContactCombobox';
-import { PhoneContact, contactsService } from '@/services/contactsService';
 import VinScanner from './VinScanner';
 import { Scan, Car, ArrowLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { getVehicleColorScheme } from '@/lib/vehicleColors';
@@ -12,7 +10,7 @@ interface AddVehiclePageProps {
   clients: Client[];
   tasks: Task[];
   settings: Settings;
-  onSave: (vehicle: Omit<Vehicle, 'id'>, clientName?: string, phoneContact?: PhoneContact) => void;
+  onSave: (vehicle: Omit<Vehicle, 'id'>, clientName?: string) => void;
   onCancel: () => void;
 }
 
@@ -36,8 +34,8 @@ const inpMono = (v: string) => `h-10 w-full rounded-lg border px-3 text-sm focus
 
 export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: AddVehiclePageProps) => {
   const [clientId, setClientId] = useState('');
-  const [pendingClientName, setPendingClientName] = useState('');
-  const [pendingContactData, setPendingContactData] = useState<PhoneContact | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientList, setShowClientList] = useState(false);
   const [vin, setVin] = useState('');
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
@@ -47,13 +45,6 @@ export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: A
   const [decoded, setDecoded] = useState(false);
   const [showVinScanner, setShowVinScanner] = useState(false);
   const { toast } = useNotifications();
-
-  const handleContactSelect = (contact: PhoneContact) => {
-    setPendingContactData(contact);
-    setPendingClientName(contact.name);
-    const bestPhone = contactsService.getBestPhoneNumber(contact.phoneNumbers);
-    toast({ title: 'Contact Selected', description: `${contact.name}${bestPhone ? ` · ${contactsService.formatPhoneNumber(bestPhone)}` : ''}` });
-  };
 
   const handleDecodeVIN = async (vinCode?: string) => {
     const vinToCheck = (vinCode || vin).toUpperCase();
@@ -83,22 +74,14 @@ export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: A
 
   const handleSave = () => {
     const vinTrimmed = vin.trim().toUpperCase();
-    const clientNameTrimmed = pendingClientName.trim();
 
-    if (!clientId && !clientNameTrimmed) {
+    if (!clientId) {
       toast({ title: 'Client required', variant: 'destructive' });
       return;
     }
     if (!vinTrimmed) {
       toast({ title: 'VIN required', variant: 'destructive' });
       return;
-    }
-    if (!clientId && clientNameTrimmed) {
-      const dup = clients.find(c => c.name.toLowerCase() === clientNameTrimmed.toLowerCase());
-      if (dup) {
-        toast({ title: 'Duplicate client', description: `"${dup.name}" already exists. Select them from the list.`, variant: 'destructive' });
-        return;
-      }
     }
     const activeTasks = tasks.filter(t => !['billed', 'paid'].includes(t.status));
     if (activeTasks.find(t => t.carVin.toUpperCase() === vinTrimmed)) {
@@ -107,19 +90,18 @@ export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: A
     }
 
     onSave({
-      clientId: clientId || 'pending',
+      clientId,
       vin: vinTrimmed,
       make: make || undefined,
       model: model || undefined,
       year: year ? parseInt(year) : undefined,
       color: color || undefined,
-    }, clientId ? undefined : clientNameTrimmed, pendingContactData || undefined);
+    });
   };
 
   const vehicleName = [year, make, model].filter(Boolean).join(' ') || 'New Vehicle';
   const selectedClient = clients.find(c => c.id === clientId);
   const color_scheme = getVehicleColorScheme(vin || 'new');
-
   return (
     <>
       <div className="flex-1 flex overflow-hidden bg-muted/20">
@@ -172,20 +154,18 @@ export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: A
                 )}
               </div>
 
-              {(selectedClient || pendingClientName) && (
+              {selectedClient && (
                 <div className="px-4 py-3 bg-card/80">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Client</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {selectedClient?.name || pendingClientName}
-                  </p>
-                  {selectedClient?.companyName && (
+                  <p className="text-sm font-semibold text-foreground">{selectedClient.name}</p>
+                  {selectedClient.companyName && (
                     <p className="text-xs text-muted-foreground">{selectedClient.companyName}</p>
                   )}
                 </div>
               )}
             </div>
 
-            {!vin && !make && !selectedClient && !pendingClientName && (
+            {!vin && !make && !selectedClient && (
               <div className="text-center py-6 text-muted-foreground/40">
                 <p className="text-xs">Start filling in fields →</p>
               </div>
@@ -203,13 +183,34 @@ export const AddVehiclePage = ({ clients, tasks, settings, onSave, onCancel }: A
           <div className="flex-1 overflow-y-auto px-10 py-8 bg-background space-y-5">
             <div className="max-w-2xl space-y-5">
               <F label="Client" required>
-                <ContactCombobox
-                  value={clientId}
-                  onValueChange={setClientId}
-                  clients={clients}
-                  onContactSelect={handleContactSelect}
-                  onPendingNameChange={setPendingClientName}
-                />
+                <div className="relative">
+                  <input
+                    value={clientSearch || (clients.find(c => c.id === clientId)?.name || '')}
+                    onChange={e => { setClientSearch(e.target.value); setClientId(''); setShowClientList(true); }}
+                    onFocus={() => setShowClientList(true)}
+                    onBlur={() => setTimeout(() => setShowClientList(false), 150)}
+                    placeholder="Search client name..."
+                    className={inp}
+                  />
+                  {showClientList && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                      {clients
+                        .filter(c => !clientSearch || c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.companyName || '').toLowerCase().includes(clientSearch.toLowerCase()))
+                        .map(c => (
+                          <button key={c.id} type="button"
+                            onMouseDown={() => { setClientId(c.id); setClientSearch(''); setShowClientList(false); }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-muted transition-colors text-sm border-b border-border/50 last:border-0">
+                            <p className="font-medium text-foreground">{c.name}</p>
+                            {c.companyName && <p className="text-xs text-muted-foreground">{c.companyName}</p>}
+                          </button>
+                        ))
+                      }
+                      {clients.filter(c => !clientSearch || c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 && (
+                        <div className="px-4 py-3 text-sm text-muted-foreground">No clients found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </F>
 
               <F label="VIN" required>

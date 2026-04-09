@@ -1101,7 +1101,7 @@ const DesktopDashboard = () => {
           clients={clients}
           tasks={tasks}
           settings={settings}
-          onSave={(vehicleData, clientName, phoneContact) => { handleAddVehicleSave(vehicleData, clientName, phoneContact); setDesktopView('tree'); }}
+          onSave={(vehicleData) => { handleAddVehicleSave(vehicleData); setDesktopView('tree'); }}
           onCancel={() => setDesktopView('tree')}
         />
       ) : desktopView === 'invoices' ? (
