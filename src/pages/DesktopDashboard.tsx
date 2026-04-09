@@ -11,6 +11,7 @@ import { DesktopReportsView } from '@/components/DesktopReportsView';
 import { DesktopInvoiceView } from '@/components/DesktopInvoiceView';
 import { DesktopClientsView } from '@/components/DesktopClientsView';
 import { AddClientDialog } from '@/components/AddClientDialog';
+import { AddClientPage } from '@/components/AddClientPage';
 import { AddVehicleDialog } from '@/components/AddVehicleDialog';
 
 import { useClients, useVehicles, useTasks, useSettings, useCloudSync, setCloudPushEnabled, pushNow } from '@/hooks/useStorage';
@@ -100,7 +101,7 @@ const DesktopDashboard = () => {
 
   const { toast } = useNotifications();
 
-  const [desktopView, setDesktopView] = useState<'tree' | 'settings' | 'reports' | 'invoices' | 'clients'>('tree');
+  const [desktopView, setDesktopView] = useState<'tree' | 'settings' | 'reports' | 'invoices' | 'clients' | 'addClient'>('tree');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
@@ -1037,7 +1038,7 @@ const DesktopDashboard = () => {
                   className="pl-9 h-9 w-80 bg-primary-foreground/15 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-primary-foreground/30"
                 />
               </div>
-              <Button size="sm" onClick={() => setShowAddClient(true)}
+              <Button size="sm" onClick={() => setDesktopView('addClient')}
                 className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border border-primary-foreground/30">
                 <UserPlus className="h-4 w-4 mr-1" /> Client
               </Button>
@@ -1088,7 +1089,12 @@ const DesktopDashboard = () => {
         </div>
       ) : desktopView === 'reports' ? (
         <DesktopReportsView tasks={tasks} clients={clients} vehicles={vehicles} settings={settings} />
-      ) : desktopView === 'invoices' ? (
+      ) : desktopView === 'addClient' ? (
+        <AddClientPage
+          onSave={(clientData) => { addClient({ ...clientData, id: crypto.randomUUID(), createdAt: new Date() } as any); setDesktopView('tree'); }}
+          onCancel={() => setDesktopView('tree')}
+          settings={settings}
+        />
         <DesktopInvoiceView settings={settings} />
       ) : desktopView === 'clients' ? (
         <DesktopClientsView
