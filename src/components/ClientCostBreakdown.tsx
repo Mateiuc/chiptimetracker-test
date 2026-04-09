@@ -177,7 +177,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
   };
 
   return (
-    <div className="space-y-4 md:space-y-5">
+    <div className="space-y-4 md:space-y-5" style={{ background: 'transparent' }}>
       {/* Client greeting */}
       <div className="text-center py-2">
         <h2 className="text-xl md:text-2xl font-bold text-foreground">Hello, {costSummary.client.name}</h2>
@@ -371,7 +371,7 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
           </div>
 
           {/* Grand total */}
-          <Card className="bg-primary/5 border-primary/30 md:max-w-lg md:mx-auto">
+          <Card className="border-2 border-primary/30 md:max-w-lg md:mx-auto shadow-md" style={{ background: 'var(--color-background-primary, white)' }}>
             <CardContent className="p-4 space-y-1">
               <div className="flex justify-between text-sm"><span>Total Labor:</span><span className="font-semibold">{formatCurrency(grandTotalLabor - grandTotalCloning - grandTotalProgramming - grandTotalMinHourAdj - grandTotalAddKey - grandTotalAllKeysLost)}</span></div>
               {grandTotalMinHourAdj > 0 && <div className="flex justify-between text-sm"><span>Min 1 Hour:</span><span className="font-semibold">{formatCurrency(grandTotalMinHourAdj)}</span></div>}
