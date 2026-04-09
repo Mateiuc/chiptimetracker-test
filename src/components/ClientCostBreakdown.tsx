@@ -85,6 +85,22 @@ const PhotoGallery = ({ photoUrls }: { photoUrls: string[] }) => {
 export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdownProps) => {
   const [collapsedVehicles, setCollapsedVehicles] = useState<Set<number>>(new Set());
   const [allCollapsed, setAllCollapsed] = useState(false);
+  // Payment sheet: null=closed, 'deposit'=deposit, number=vehicle index
+  const [paySheet, setPaySheet] = useState<null | 'deposit' | number>(null);
+
+  const hasPayment = (costSummary.paymentMethods?.length ?? 0) > 0 || !!costSummary.paymentLink;
+  const showPayButtons = hasPayment && filter !== 'paid';
+
+  const openPay = (target: 'deposit' | number) => {
+    const methods = costSummary.paymentMethods;
+    if (methods && methods.length === 1) {
+      window.open(methods[0].url, '_blank');
+    } else if (!methods?.length && costSummary.paymentLink) {
+      window.open(costSummary.paymentLink, '_blank');
+    } else {
+      setPaySheet(target);
+    }
+  };
 
   const toggleVehicle = (idx: number) => {
     setCollapsedVehicles(prev => {
@@ -253,6 +269,14 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
                           {deposit > 0 ? formatCurrency(balanceDue) : formatCurrency(vehicleSummary.vehicleTotal)}
                         </span>
                       )}
+                      {showPayButtons && vehicleSummary.vehicleTotal > 0 && (
+                        <button
+                          onClick={e => { e.stopPropagation(); openPay(vIdx); }}
+                          className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors"
+                        >
+                          Pay
+                        </button>
+                      )}
                       {isCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
                     </div>
                   </button>
@@ -401,25 +425,67 @@ export const ClientCostBreakdown = ({ costSummary, filter }: ClientCostBreakdown
             </CardContent>
           </Card>
 
-          {/* Payment methods */}
-          {(costSummary.paymentMethods?.length ?? 0) > 0 && (
-            <div className="flex flex-col items-center gap-2">
-              {costSummary.paymentMethods!.map((method, idx) => (
-                <Button key={idx} size="lg"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8 w-full max-w-xs"
-                  onClick={() => window.open(method.url, '_blank')}>
-                  <DollarSign className="h-5 w-5 mr-1" />Pay via {method.label}
-                </Button>
-              ))}
+          {/* Pay Deposit button below grand total */}
+          {showPayButtons && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => openPay('deposit')}
+                className="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950 font-bold px-8 py-2.5 rounded-xl text-sm transition-colors w-full max-w-xs"
+              >
+                + Pay Deposit
+              </button>
             </div>
           )}
 
-          {costSummary.paymentLink && !(costSummary.paymentMethods?.length) && (
-            <div className="flex justify-center">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8"
-                onClick={() => window.open(costSummary.paymentLink!, '_blank')}>
-                <DollarSign className="h-5 w-5 mr-1" />Pay Now{costSummary.paymentLabel ? ` via ${costSummary.paymentLabel}` : ''}
-              </Button>
+          {/* Payment sheet — bottom sheet style */}
+          {paySheet !== null && (
+            <div
+              className="fixed inset-0 z-50 flex items-end justify-center"
+              style={{ background: 'rgba(0,0,0,0.5)' }}
+              onClick={() => setPaySheet(null)}
+            >
+              <div
+                className="w-full max-w-lg bg-card rounded-t-2xl p-5 pb-8 space-y-3"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-bold text-base text-foreground">
+                    {paySheet === 'deposit'
+                      ? 'Pay a deposit'
+                      : (() => {
+                          const v = filteredVehicles[paySheet as number]?.vehicle;
+                          const name = [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || 'Vehicle';
+                          const amt = filteredVehicles[paySheet as number]?.vehicleTotal;
+                          return `Pay for ${name} — ${formatCurrency(amt)}`;
+                        })()
+                    }
+                  </p>
+                  <button onClick={() => setPaySheet(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
+                </div>
+                <p className="text-xs text-muted-foreground">Choose your payment method:</p>
+                {costSummary.paymentMethods?.map((method, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { window.open(method.url, '_blank'); setPaySheet(null); }}
+                    className="w-full flex items-center justify-between bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3.5 rounded-xl transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Pay via {method.label}
+                    </span>
+                    <ExternalLink className="h-4 w-4 opacity-70" />
+                  </button>
+                ))}
+                {costSummary.paymentLink && !costSummary.paymentMethods?.length && (
+                  <button
+                    onClick={() => { window.open(costSummary.paymentLink!, '_blank'); setPaySheet(null); }}
+                    className="w-full flex items-center justify-between bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3.5 rounded-xl transition-colors"
+                  >
+                    <span className="flex items-center gap-2"><DollarSign className="h-5 w-5" />Pay Now</span>
+                    <ExternalLink className="h-4 w-4 opacity-70" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
