@@ -312,15 +312,57 @@ export const DesktopClientsView = ({
                     </div>
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label>Logo URL</Label>
-                    <Input
-                      value={editFormData.portalLogoUrl || ''}
-                      onChange={e => setEditFormData(p => ({ ...p, portalLogoUrl: e.target.value || undefined }))}
-                      placeholder={settings.portalLogoUrl || 'https://yoursite.com/logo.png'}
-                    />
+                    <Label>Logo</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => document.getElementById('client-logo-upload')?.click()}
+                      >
+                        📁 Upload from PC
+                      </Button>
+                      <input
+                        id="client-logo-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => {
+                            setEditFormData(p => ({ ...p, portalLogoUrl: ev.target?.result as string }));
+                          };
+                          reader.readAsDataURL(file);
+                          e.target.value = '';
+                        }}
+                      />
+                      <Input
+                        value={editFormData.portalLogoUrl?.startsWith('data:') ? '' : (editFormData.portalLogoUrl || '')}
+                        onChange={e => setEditFormData(p => ({ ...p, portalLogoUrl: e.target.value || undefined }))}
+                        placeholder="or paste URL: https://..."
+                        className="flex-1"
+                      />
+                      {editFormData.portalLogoUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive shrink-0"
+                          onClick={() => setEditFormData(p => ({ ...p, portalLogoUrl: undefined }))}
+                        >
+                          ✕ Remove
+                        </Button>
+                      )}
+                    </div>
                     {editFormData.portalLogoUrl && (
-                      <div className="mt-1 p-2 bg-muted rounded-lg inline-block">
-                        <img src={editFormData.portalLogoUrl} alt="Logo preview" className="h-8 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                      <div className="mt-1 p-2 bg-muted rounded-lg inline-flex items-center gap-2">
+                        <img src={editFormData.portalLogoUrl} alt="Logo preview" className="h-10 object-contain max-w-[120px]" onError={e => (e.currentTarget.style.display = 'none')} />
+                        <span className="text-xs text-muted-foreground">
+                          {editFormData.portalLogoUrl.startsWith('data:') ? '✓ Uploaded from PC' : '✓ URL set'}
+                        </span>
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">Leave empty to use the default from Settings</p>

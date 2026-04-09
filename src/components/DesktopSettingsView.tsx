@@ -262,18 +262,58 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
             <p className="text-xs text-muted-foreground">Shown in the portal header instead of "Service Portal"</p>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Logo URL</Label>
-            <Input
-              value={portalLogoUrl}
-              onChange={e => setPortalLogoUrl(e.target.value)}
-              placeholder="https://yoursite.com/logo.png"
-            />
-            <p className="text-xs text-muted-foreground">Paste a public image URL — shown in the portal header</p>
+            <Label className="text-xs">Logo</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => document.getElementById('settings-logo-upload')?.click()}
+              >
+                📁 Upload from PC
+              </Button>
+              <input
+                id="settings-logo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => setPortalLogoUrl(ev.target?.result as string);
+                  reader.readAsDataURL(file);
+                  e.target.value = '';
+                }}
+              />
+              <Input
+                value={portalLogoUrl.startsWith('data:') ? '' : portalLogoUrl}
+                onChange={e => setPortalLogoUrl(e.target.value)}
+                placeholder="or paste URL: https://..."
+                className="flex-1"
+              />
+              {portalLogoUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive shrink-0"
+                  onClick={() => setPortalLogoUrl('')}
+                >
+                  ✕ Remove
+                </Button>
+              )}
+            </div>
             {portalLogoUrl && (
-              <div className="mt-2 p-2 bg-muted rounded-lg inline-block">
-                <img src={portalLogoUrl} alt="Logo preview" className="h-10 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+              <div className="mt-1 p-2 bg-muted rounded-lg inline-flex items-center gap-2">
+                <img src={portalLogoUrl} alt="Logo preview" className="h-10 object-contain max-w-[120px]" onError={e => (e.currentTarget.style.display = 'none')} />
+                <span className="text-xs text-muted-foreground">
+                  {portalLogoUrl.startsWith('data:') ? '✓ Uploaded from PC' : '✓ URL set'}
+                </span>
               </div>
             )}
+            <p className="text-xs text-muted-foreground">Default logo shown in all client portals</p>
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Header Color</Label>
