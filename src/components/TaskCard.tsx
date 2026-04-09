@@ -1144,16 +1144,18 @@ export const TaskCard = ({
         const currentTasks = await capacitorStorage.getTasks();
         const freshTask = currentTasks.find(t => t.id === task.id);
         
-        if (!freshTask || !freshTask.activeSessionId) {
+        if (!freshTask || (!freshTask.activeSessionId && (!freshTask.sessions || freshTask.sessions.length === 0))) {
           toast({
-            title: 'Session Ended',
-            description: 'The work session has ended. Photo not saved.',
+            title: 'No Session',
+            description: 'Start a work session first to attach photos.',
             variant: 'destructive',
           });
           return;
         }
 
-        const sessionIndex = freshTask.sessions.findIndex(s => s.id === freshTask.activeSessionId);
+        // Use active session or fall back to most recent session
+        const targetSessionId = freshTask.activeSessionId || freshTask.sessions[freshTask.sessions.length - 1]?.id;
+        const sessionIndex = freshTask.sessions.findIndex(s => s.id === targetSessionId);
         
         const photoId = crypto.randomUUID();
         
@@ -1174,7 +1176,7 @@ export const TaskCard = ({
         const updatedTask = {
           ...freshTask,
           sessions: freshTask.sessions.map(session => 
-            session.id === freshTask.activeSessionId
+            session.id === targetSessionId
               ? { ...session, photos: [...(session.photos || []), newPhoto] }
               : session
           ),
@@ -1192,7 +1194,7 @@ export const TaskCard = ({
             const taskWithCloudUrl = {
               ...updatedTask,
               sessions: updatedTask.sessions.map(session =>
-                session.id === freshTask.activeSessionId
+                session.id === targetSessionId
                   ? { ...session, photos: session.photos?.map(p =>
                       p.id === photoId ? { ...p, cloudUrl } : p
                     )}
@@ -1200,7 +1202,6 @@ export const TaskCard = ({
               ),
             };
             onUpdateTask?.(taskWithCloudUrl);
-            console.log('[TaskCard] Photo uploaded to cloud:', cloudUrl);
           })
           .catch(err => console.warn('[TaskCard] Cloud upload failed:', err));
       }
@@ -1348,7 +1349,7 @@ export const TaskCard = ({
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
-                  {isActive && task.activeSessionId && (
+                  {((task.sessions || []).length > 0 || (isActive && task.activeSessionId)) && (
                     <DropdownMenuItem onClick={handleCapturePhoto}>
                       <CameraIcon className="h-4 w-4 mr-2" />
                       Capture Photo
