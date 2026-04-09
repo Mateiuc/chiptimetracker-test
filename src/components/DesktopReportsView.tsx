@@ -277,7 +277,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       {/* Filter Toolbar — single row */}
-      <div className="sticky top-0 z-10 bg-card border rounded-lg px-4 py-3 shadow-sm">
+      <div className="bg-card border rounded-lg px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={rptClient} onValueChange={v => { setRptClient(v); setRptVehicle('all'); }}>
             <SelectTrigger className="w-[160px] h-8 text-sm"><SelectValue placeholder="All Clients" /></SelectTrigger>
