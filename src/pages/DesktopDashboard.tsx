@@ -12,6 +12,7 @@ import { DesktopInvoiceView } from '@/components/DesktopInvoiceView';
 import { DesktopClientsView } from '@/components/DesktopClientsView';
 import { AddClientDialog } from '@/components/AddClientDialog';
 import { AddClientPage } from '@/components/AddClientPage';
+import { AddVehiclePage } from '@/components/AddVehiclePage';
 import { AddVehicleDialog } from '@/components/AddVehicleDialog';
 
 import { useClients, useVehicles, useTasks, useSettings, useCloudSync, setCloudPushEnabled, pushNow } from '@/hooks/useStorage';
@@ -101,7 +102,7 @@ const DesktopDashboard = () => {
 
   const { toast } = useNotifications();
 
-  const [desktopView, setDesktopView] = useState<'tree' | 'settings' | 'reports' | 'invoices' | 'clients' | 'addClient'>('tree');
+  const [desktopView, setDesktopView] = useState<'tree' | 'settings' | 'reports' | 'invoices' | 'clients' | 'addClient' | 'addVehicle'>('tree');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
@@ -235,7 +236,7 @@ const DesktopDashboard = () => {
   // --- Add vehicle for specific client ---
   const openAddVehicleForClient = (clientId: string) => {
     setAddVehicleClientId(clientId);
-    setShowAddVehicle(true);
+    setDesktopView('addVehicle');
   };
 
   // --- Bill PDF generation ---
@@ -1042,7 +1043,7 @@ const DesktopDashboard = () => {
                 className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border border-primary-foreground/30">
                 <UserPlus className="h-4 w-4 mr-1" /> Client
               </Button>
-              <Button size="sm" onClick={() => { setAddVehicleClientId(null); setShowAddVehicle(true); }}
+              <Button size="sm" onClick={() => { setAddVehicleClientId(null); setDesktopView('addVehicle'); }}
                 className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border border-primary-foreground/30">
                 <Plus className="h-4 w-4 mr-1" /> Vehicle
               </Button>
@@ -1094,6 +1095,14 @@ const DesktopDashboard = () => {
           onSave={(clientData) => { addClient({ ...clientData, id: crypto.randomUUID(), createdAt: new Date() } as any); setDesktopView('tree'); }}
           onCancel={() => setDesktopView('tree')}
           settings={settings}
+        />
+      ) : desktopView === 'addVehicle' ? (
+        <AddVehiclePage
+          clients={clients}
+          tasks={tasks}
+          settings={settings}
+          onSave={(vehicleData, clientName, phoneContact) => { handleAddVehicleSave(vehicleData, clientName, phoneContact); setDesktopView('tree'); }}
+          onCancel={() => setDesktopView('tree')}
         />
       ) : desktopView === 'invoices' ? (
         <DesktopInvoiceView settings={settings} />
