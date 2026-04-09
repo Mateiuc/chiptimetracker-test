@@ -1385,70 +1385,20 @@ const DesktopDashboard = () => {
                     {/* Client header card */}
                     <div className={`rounded-xl border-2 overflow-hidden ${clientColor.border}`}>
                       <div className={`${clientColor.gradient} px-5 py-4`}>
-                        <div className="flex items-center justify-between">
-                          <div>
+                        {/* Name + labeled action buttons */}
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="min-w-0">
                             <h2 className="text-xl font-bold">{client.name}</h2>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                              {client.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> {client.email}</span>}
-                              {client.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {client.phone}</span>}
-                              <span className="flex items-center gap-1 font-semibold"><CreditCard className="h-3.5 w-3.5" /> {formatCurrency(rate)}/hr</span>
-                            </div>
-                            {(() => {
-                              const clientRevenue = clientVehicles.flatMap(v => v.tasks).reduce((sum, t) => sum + getTaskCost(t), 0);
-                              const vehicleDeps = clientVehicles.reduce((sum, cv) => sum + (cv.vehicle?.prepaidAmount || 0), 0);
-                              const clientDep = client.prepaidAmount || 0;
-                              const balanceDue = Math.max(0, clientRevenue - vehicleDeps - clientDep);
-                              if (clientRevenue <= 0) return null;
-                              return (
-                                <div className="flex items-center gap-3 mt-1 text-xs flex-wrap">
-                                  <span className={`font-semibold ${
-                                    filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
-                                    filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
-                                    filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
-                                    'text-emerald-600 dark:text-emerald-400'
-                                  }`}>Total: {formatCurrency(clientRevenue)}</span>
-                                  {(vehicleDeps > 0 || clientDep > 0) && balanceDue > 0 && (
-                                    <span className="text-orange-600 font-bold">Due: {formatCurrency(balanceDue)}</span>
-                                  )}
-                                  {vehicleDeps > 0 && (
-                                    <span className="text-red-500">Car Deposits: {formatCurrency(vehicleDeps)}</span>
-                                  )}
-                                  {clientDep > 0 && (
-                                    <span className="text-red-500">Client Deposit: {formatCurrency(clientDep)}</span>
-                                  )}
-                                </div>
-                              );
-                            })()}
+                            {client.companyName && <p className="text-sm text-muted-foreground font-medium">{client.companyName}</p>}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEditClient(client)} title="Edit Client">
-                              <Pencil className="h-4 w-4" />
+                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => startEditClient(client)}>
+                              <Pencil className="h-3.5 w-3.5" /> Edit
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openAddVehicleForClient(client.id)} title="Add Vehicle">
-                              <Plus className="h-4 w-4" />
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => generateClientPDF(client.id)}>
+                              <Printer className="h-3.5 w-3.5" /> PDF
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                              setImportingClientId(client.id);
-                              const input = document.getElementById(`xls-import-${client.id}`) as HTMLInputElement;
-                              input?.click();
-                            }} title="Import XLS">
-                              <Upload className="h-4 w-4" />
-                            </Button>
-                            <input
-                              id={`xls-import-${client.id}`}
-                              type="file"
-                              accept=".xls,.xlsx"
-                              className="hidden"
-                              onChange={e => {
-                                const file = e.target.files?.[0];
-                                if (file) handleImportXls(file, client.id);
-                                e.target.value = '';
-                              }}
-                            />
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => generateClientPDF(client.id)} title="Print PDF Report">
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={async () => {
                               if (client.accessCode) {
                                 navigator.clipboard.writeText(client.accessCode);
                                 toast({ title: 'PIN Copied!', description: `PIN: ${client.accessCode}` });
@@ -1462,10 +1412,22 @@ const DesktopDashboard = () => {
                                   toast({ title: 'Error', description: 'Could not generate PIN', variant: 'destructive' });
                                 }
                               }
-                            }} title={client.accessCode ? `PIN: ${client.accessCode}` : 'Set PIN'}>
-                              <KeyRound className="h-4 w-4" />
+                            }}>
+                              <KeyRound className="h-3.5 w-3.5" />
+                              {client.accessCode ? `PIN: ${client.accessCode}` : 'Set PIN'}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={async () => {
+                              try {
+                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
+                                updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
+                                window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
+                              } catch {
+                                toast({ title: 'Error', description: 'Could not open portal preview', variant: 'destructive' });
+                              }
+                            }}>
+                              <Eye className="h-3.5 w-3.5" /> Portal
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={async () => {
                               try {
                                 const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
                                 updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
@@ -1493,25 +1455,57 @@ const DesktopDashboard = () => {
                                 URL.revokeObjectURL(a.href);
                                 toast({ title: 'File Downloaded', description: `Send it to your client. PIN: ${code}` });
                               }
-                            }} title="Share Portal Link">
-                              <Link2 className="h-4 w-4" />
+                            }}>
+                              <Link2 className="h-3.5 w-3.5" /> Share
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={async () => {
-                              try {
-                                const result = await syncPortalToCloud(client, vehicles, tasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl);
-                                updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode });
-                                window.open(`${PORTAL_BASE_URL}/client-view?id=${result.portalId}&preview=1`, '_blank');
-                              } catch {
-                                toast({ title: 'Error', description: 'Could not open portal preview', variant: 'destructive' });
-                              }
-                            }} title="Client Portal">
-                              <Eye className="h-4 w-4" />
+                            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => { setImportingClientId(client.id); const input = document.getElementById(`xls-import-${client.id}`) as HTMLInputElement; input?.click(); }}>
+                              <Upload className="h-3.5 w-3.5" /> Import XLS
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteClient(client.id)} title="Delete Client">
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                            <input id={`xls-import-${client.id}`} type="file" accept=".xls,.xlsx" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleImportXls(file, client.id); e.target.value = ''; }} />
+                            <Button size="sm" variant="destructive" className="h-8 gap-1" onClick={() => handleDeleteClient(client.id)}>
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
                             </Button>
                           </div>
                         </div>
+
+                        {/* Full info row */}
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm text-muted-foreground">
+                          {client.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>}
+                          {client.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.phone}</span>}
+                          <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5" />{formatCurrency(rate)}/hr</span>
+                          {(client.cloningRate || settings.defaultCloningRate) && <span className="text-xs">{formatCurrency(client.cloningRate || settings.defaultCloningRate || 0)}/clone</span>}
+                          {(client.programmingRate || settings.defaultProgrammingRate) && <span className="text-xs">{formatCurrency(client.programmingRate || settings.defaultProgrammingRate || 0)}/prog</span>}
+                          {(client.addKeyRate || settings.defaultAddKeyRate) && <span className="text-xs">{formatCurrency(client.addKeyRate || settings.defaultAddKeyRate || 0)}/add-key</span>}
+                          {(client.allKeysLostRate || settings.defaultAllKeysLostRate) && <span className="text-xs">{formatCurrency(client.allKeysLostRate || settings.defaultAllKeysLostRate || 0)}/AKL</span>}
+                        </div>
+                        {(client.address || client.city || client.state) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {[client.address, [client.city, client.state, client.zip].filter(Boolean).join(', ')].filter(Boolean).join(', ')}
+                          </p>
+                        )}
+                        {client.notes && <p className="text-xs text-muted-foreground italic mt-1">{client.notes}</p>}
+
+                        {/* Totals */}
+                        {(() => {
+                          const clientRevenue = clientVehicles.flatMap(v => v.tasks).reduce((sum, t) => sum + getTaskCost(t), 0);
+                          const vehicleDeps = clientVehicles.reduce((sum, cv) => sum + (cv.vehicle?.prepaidAmount || 0), 0);
+                          const clientDep = client.prepaidAmount || 0;
+                          const balanceDue = Math.max(0, clientRevenue - vehicleDeps - clientDep);
+                          if (clientRevenue <= 0) return null;
+                          return (
+                            <div className="flex items-center gap-3 mt-2 text-xs flex-wrap">
+                              <span className={`font-semibold ${
+                                filter === 'paid' ? 'text-emerald-600 dark:text-emerald-400' :
+                                filter === 'billed' ? 'text-amber-600 dark:text-amber-400' :
+                                filter === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                                'text-emerald-600 dark:text-emerald-400'
+                              }`}>Total: {formatCurrency(clientRevenue)}</span>
+                              {(vehicleDeps > 0 || clientDep > 0) && balanceDue > 0 && <span className="text-orange-600 font-bold">Due: {formatCurrency(balanceDue)}</span>}
+                              {vehicleDeps > 0 && <span className="text-red-500">Car Deposits: {formatCurrency(vehicleDeps)}</span>}
+                              {clientDep > 0 && <span className="text-red-500">Client Deposit: {formatCurrency(clientDep)}</span>}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Inline client edit form */}
