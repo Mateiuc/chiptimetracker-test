@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Settings as SettingsIcon, Search, Upload, Download, Pencil, Trash2, Receipt, DollarSign, ChevronDown, ChevronRight, ImageOff, Car, Mail, Phone, CreditCard, ArrowRightLeft, TrendingUp, Plus, FileText, ExternalLink, Save, X, UserPlus, ArrowUp, ArrowDown, BarChart3, Printer, KeyRound, Link2, Eye, Users, FileUp } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -116,6 +117,9 @@ const DesktopDashboard = () => {
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [vehicleEditData, setVehicleEditData] = useState<{ vin: string; make: string; model: string; year: string; color: string; prepaidAmount: string }>({ vin: '', make: '', model: '', year: '', color: '', prepaidAmount: '' });
   const [importingClientId, setImportingClientId] = useState<string | null>(null);
+  // Delete confirmation dialogs
+  const [deleteVehicleDialog, setDeleteVehicleDialog] = useState<{ open: boolean; vehicleId: string | null }>({ open: false, vehicleId: null });
+  const [deleteTaskDialog, setDeleteTaskDialog] = useState<{ open: boolean; taskId: string | null }>({ open: false, taskId: null });
   const [chartClient, setChartClient] = useState<string>('all');
   const [drillMonth, setDrillMonth] = useState<string | null>(null);
   const [drillSortField, setDrillSortField] = useState<'date' | 'cost'>('date');
@@ -1462,9 +1466,6 @@ const DesktopDashboard = () => {
                               <Upload className="h-3.5 w-3.5" /> Import XLS
                             </Button>
                             <input id={`xls-import-${client.id}`} type="file" accept=".xls,.xlsx" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleImportXls(file, client.id); e.target.value = ''; }} />
-                            <Button size="sm" variant="destructive" className="h-8 gap-1" onClick={() => handleDeleteClient(client.id)}>
-                              <Trash2 className="h-3.5 w-3.5" /> Delete
-                            </Button>
                           </div>
                         </div>
 
@@ -1587,7 +1588,7 @@ const DesktopDashboard = () => {
                                   ))}
                                 </select>
                               )}
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteVehicle(vehicle.id)} title="Delete Vehicle">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteVehicleDialog({ open: true, vehicleId: vehicle.id })} title="Delete Vehicle">
                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </div>
@@ -1704,7 +1705,7 @@ const DesktopDashboard = () => {
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleUploadDiagnosticPdf(task.id)} title={task.diagnosticPdfUrl ? 'Replace Diagnostic PDF' : 'Upload Diagnostic PDF'}>
                                           <FileUp className={`h-3.5 w-3.5 ${task.diagnosticPdfUrl ? 'text-emerald-600' : ''}`} />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)} title="Delete">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteTaskDialog({ open: true, taskId: task.id })} title="Delete">
                                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                         </Button>
                                       </div>
@@ -1845,6 +1846,64 @@ const DesktopDashboard = () => {
         onAddClient={() => setShowAddClient(true)}
         onSave={handleAddVehicleSave}
       />
+
+      {/* Delete Vehicle Confirmation */}
+      <AlertDialog open={deleteVehicleDialog.open} onOpenChange={open => !open && setDeleteVehicleDialog({ open: false, vehicleId: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vehicle</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteVehicleDialog.vehicleId && (() => {
+                const v = vehicles.find(x => x.id === deleteVehicleDialog.vehicleId);
+                const vName = [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || 'this vehicle';
+                const taskCount = tasks.filter(t => t.vehicleId === deleteVehicleDialog.vehicleId).length;
+                return `Delete ${vName}? This will permanently remove the vehicle and all ${taskCount} associated task${taskCount !== 1 ? 's' : ''}. This cannot be undone.`;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteVehicleDialog.vehicleId) handleDeleteVehicle(deleteVehicleDialog.vehicleId);
+                setDeleteVehicleDialog({ open: false, vehicleId: null });
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Task Confirmation */}
+      <AlertDialog open={deleteTaskDialog.open} onOpenChange={open => !open && setDeleteTaskDialog({ open: false, taskId: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTaskDialog.taskId && (() => {
+                const t = tasks.find(x => x.id === deleteTaskDialog.taskId);
+                const v = t ? vehicles.find(x => x.id === t.vehicleId) : null;
+                const vName = [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || 'this vehicle';
+                return `Delete the work session for ${vName}? All time records, parts, and photos will be permanently removed. This cannot be undone.`;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTaskDialog.taskId) { handleDelete(deleteTaskDialog.taskId); setEditingTaskId(null); }
+                setDeleteTaskDialog({ open: false, taskId: null });
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
