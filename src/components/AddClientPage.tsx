@@ -95,7 +95,7 @@ export const AddClientPage = ({ onSave, onCancel, settings }: AddClientPageProps
       <div className="w-80 shrink-0 bg-card border-r flex flex-col overflow-hidden">
 
         {/* Back button */}
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-5 pt-5 pb-4">
           <button onClick={onCancel}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -105,8 +105,8 @@ export const AddClientPage = ({ onSave, onCancel, settings }: AddClientPageProps
 
         {/* Title */}
         <div className="px-6 pb-6 border-b">
-          <h1 className="text-2xl font-bold text-foreground">New Client</h1>
-          <p className="text-sm text-muted-foreground mt-1">Fill in the details below</p>
+          <h1 className="text-xl font-bold text-foreground">New Client</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Fill in the details below</p>
         </div>
 
         {/* Steps */}
@@ -194,94 +194,94 @@ export const AddClientPage = ({ onSave, onCancel, settings }: AddClientPageProps
       </div>
 
       {/* ── RIGHT: Form ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background">
 
         {/* Form header */}
-        <div className="px-10 py-8 border-b bg-background">
-          <h2 className="text-2xl font-bold text-foreground">{STEPS[step].label}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{STEPS[step].desc}</p>
+        <div className="px-8 py-5 border-b shrink-0">
+          <h2 className="text-xl font-bold text-foreground">{STEPS[step].label}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{STEPS[step].desc}</p>
         </div>
 
-        {/* Fields */}
-        <div className="flex-1 overflow-y-auto px-10 py-8 bg-background">
-          {step === 0 && (
-            <div className="max-w-2xl space-y-5">
-              <div className="grid grid-cols-2 gap-5">
-                <F label="Full Name *">
-                  <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lance Naidoo" className={inpName} />
-                </F>
-                <F label="Company">
-                  <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Business name" className={inp} />
-                </F>
-              </div>
-              <div className="grid grid-cols-2 gap-5">
-                <F label="Phone">
-                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 734-000-0000" className={inp} />
-                </F>
-                <F label="Email">
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="client@example.com" className={inp} />
-                </F>
-              </div>
-              <F label="Street Address">
-                <input value={address} onChange={e => setAddress(e.target.value)} placeholder="760 State Cir" className={inp} />
-              </F>
-              <div className="grid grid-cols-5 gap-4">
-                <div className="col-span-2"><F label="City"><input value={city} onChange={e => setCity(e.target.value)} placeholder="Ann Arbor" className={inp} /></F></div>
-                <F label="State"><input value={stateVal} onChange={e => setStateVal(e.target.value)} placeholder="MI" className={inp} /></F>
-                <div className="col-span-2"><F label="ZIP"><input value={zip} onChange={e => setZip(e.target.value)} placeholder="48108" className={inp} /></F></div>
-              </div>
-              <F label="ITIN">
-                <input value={itin} onChange={e => setItin(e.target.value)} placeholder="Individual Taxpayer ID (optional)" className={inp} />
-              </F>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="max-w-2xl space-y-5">
-              <p className="text-sm text-muted-foreground">Leave any field empty to use your default rates from Settings.</p>
-              <div className="grid grid-cols-2 gap-5">
-                {[
-                  { label: 'Hourly Rate', val: hourlyRate, set: setHourlyRate, ph: `Default: $${settings.defaultHourlyRate || 75}/hr` },
-                  { label: 'Cloning Rate', val: cloningRate, set: setCloningRate, ph: `Default: $${settings.defaultCloningRate || '—'}` },
-                  { label: 'Programming Rate', val: programmingRate, set: setProgrammingRate, ph: `Default: $${settings.defaultProgrammingRate || '—'}` },
-                  { label: 'Add Key Rate', val: addKeyRate, set: setAddKeyRate, ph: `Default: $${settings.defaultAddKeyRate || '—'}` },
-                  { label: 'All Keys Lost Rate', val: allKeysLostRate, set: setAllKeysLostRate, ph: `Default: $${settings.defaultAllKeysLostRate || '—'}` },
-                  { label: 'Deposit ($)', val: prepaidAmount, set: setPrepaidAmount, ph: '0.00' },
-                ].map(f => (
-                  <F key={f.label} label={f.label}>
-                    <input type="number" value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} min={0} step={0.01} className={inp} />
+        {/* Fields — no scroll, fills space */}
+        <div className="flex-1 px-8 py-5 flex flex-col justify-between">
+          <div className="max-w-2xl space-y-3">
+            {step === 0 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Full Name *">
+                    <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lance Naidoo" className={inpName} />
                   </F>
-                ))}
-              </div>
-            </div>
-          )}
+                  <F label="Company">
+                    <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Business name" className={inp} />
+                  </F>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <F label="Phone">
+                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 734-000-0000" className={inp} />
+                  </F>
+                  <F label="Email">
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="client@example.com" className={inp} />
+                  </F>
+                </div>
+                <F label="Street Address">
+                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="760 State Cir" className={inp} />
+                </F>
+                <div className="grid grid-cols-5 gap-3">
+                  <div className="col-span-2"><F label="City"><input value={city} onChange={e => setCity(e.target.value)} placeholder="Ann Arbor" className={inp} /></F></div>
+                  <F label="State"><input value={stateVal} onChange={e => setStateVal(e.target.value)} placeholder="MI" className={inp} /></F>
+                  <div className="col-span-2"><F label="ZIP"><input value={zip} onChange={e => setZip(e.target.value)} placeholder="48108" className={inp} /></F></div>
+                </div>
+                <F label="ITIN">
+                  <input value={itin} onChange={e => setItin(e.target.value)} placeholder="Individual Taxpayer ID (optional)" className={inp} />
+                </F>
+              </>
+            )}
 
-          {step === 2 && (
-            <div className="max-w-2xl space-y-5">
+            {step === 1 && (
+              <>
+                <p className="text-xs text-muted-foreground">Leave empty to use defaults from Settings.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Hourly Rate', val: hourlyRate, set: setHourlyRate, ph: `Default: $${settings.defaultHourlyRate || 75}/hr` },
+                    { label: 'Cloning Rate', val: cloningRate, set: setCloningRate, ph: `Default: $${settings.defaultCloningRate || '—'}` },
+                    { label: 'Programming Rate', val: programmingRate, set: setProgrammingRate, ph: `Default: $${settings.defaultProgrammingRate || '—'}` },
+                    { label: 'Add Key Rate', val: addKeyRate, set: setAddKeyRate, ph: `Default: $${settings.defaultAddKeyRate || '—'}` },
+                    { label: 'All Keys Lost Rate', val: allKeysLostRate, set: setAllKeysLostRate, ph: `Default: $${settings.defaultAllKeysLostRate || '—'}` },
+                    { label: 'Deposit ($)', val: prepaidAmount, set: setPrepaidAmount, ph: '0.00' },
+                  ].map(f => (
+                    <F key={f.label} label={f.label}>
+                      <input type="number" value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} min={0} step={0.01} className={inp} />
+                    </F>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
               <F label="Internal Notes">
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
                   placeholder="Any notes about this client — visible only to you, never shown to the client..."
-                  className="w-full min-h-[220px] rounded-lg border border-border bg-background px-3 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
+                  className="w-full min-h-[180px] rounded-lg border border-border bg-background px-3 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
               </F>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Footer */}
-        <div className="px-10 py-5 border-t bg-background flex items-center justify-between">
-          <button onClick={() => { if (step === 0) onCancel(); else setStep(s => s - 1); }}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2.5 rounded-lg hover:bg-muted">
-            {step > 0 && <ChevronLeft className="h-4 w-4" />}
-            {step === 0 ? 'Cancel' : 'Back'}
-          </button>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-muted-foreground">{step + 1} of {STEPS.length}</span>
-            <button onClick={handleNext}
-              disabled={step === 0 && !name.trim()}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
-              {step === 2 ? 'Save Client' : 'Continue'}
-              {step < 2 && <ChevronRight className="h-4 w-4" />}
+          {/* Footer pinned to bottom */}
+          <div className="flex items-center justify-between pt-4 border-t mt-4">
+            <button onClick={() => { if (step === 0) onCancel(); else setStep(s => s - 1); }}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-muted">
+              {step > 0 && <ChevronLeft className="h-4 w-4" />}
+              {step === 0 ? 'Cancel' : 'Back'}
             </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{step + 1} of {STEPS.length}</span>
+              <button onClick={handleNext}
+                disabled={step === 0 && !name.trim()}
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                {step === 2 ? 'Save Client' : 'Continue'}
+                {step < 2 && <ChevronRight className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
