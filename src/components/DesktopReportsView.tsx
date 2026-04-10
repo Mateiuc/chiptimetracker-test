@@ -355,8 +355,8 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     </Popover>
   );
 
-  const clientChartHeight = Math.max(220, revenueByClient.length * 44);
-  const vehicleChartHeight = Math.max(220, revenueByVehicle.length * 38);
+  const clientChartHeight = Math.max(120, revenueByClient.length * 22);
+  const vehicleChartHeight = Math.max(120, revenueByVehicle.length * 22);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -448,7 +448,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
                     <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `$${v}`} />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={120} />
                     <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]} barSize={14}>
                       {revenueByClient.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                     </Bar>
                   </BarChart>
@@ -473,7 +473,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
                     <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `$${v}`} />
                     <YAxis dataKey="label" type="category" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" width={140} />
                     <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]} barSize={14}>
                       {revenueByVehicle.map((_, i) => <Cell key={i} fill={CHART_COLORS[(i + 3) % CHART_COLORS.length]} />)}
                     </Bar>
                   </BarChart>
