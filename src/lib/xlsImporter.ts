@@ -101,28 +101,26 @@ export const parseWorkHistoryXls = async (file: File): Promise<ImportedSession[]
       // Use rel. Duration as authoritative if available
       const totalWorkSeconds = relDurationSeconds ?? periods.reduce((sum, p) => sum + p.duration, 0);
 
-      // Split tags
-      const tags = tagsRaw
-        ? tagsRaw.split(/,/).map(t => t.trim()).filter(Boolean)
-        : [''];
-
-      // Parse paid column
+      // Tags: combine all into one vehicle name (one task per row, salary counted once)
       const paidRaw = paidCol !== -1 && row[paidCol] != null ? String(row[paidCol]).toLowerCase().trim() : '';
       const paid = ['yes', 'true', '1'].includes(paidRaw);
 
-      for (const tag of tags) {
-        results.push({
-          tag,
-          date: baseDate,
-          startTime: new Date(startTime),
-          endTime: new Date(endTime),
-          description,
-          relDurationSeconds: totalWorkSeconds,
-          relSalary,
-          paid,
-          periods: periods.map(p => ({ ...p })),
-        });
-      }
+      const tags = tagsRaw
+        ? tagsRaw.split(/,/).map(t => t.trim()).filter(Boolean)
+        : [''];
+      const combinedTag = tags.join(', ') || '';
+
+      results.push({
+        tag: combinedTag,
+        date: baseDate,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        description,
+        relDurationSeconds: totalWorkSeconds,
+        relSalary,
+        paid,
+        periods: periods.map(p => ({ ...p })),
+      });
     } catch {
       // Skip unparseable rows
     }
