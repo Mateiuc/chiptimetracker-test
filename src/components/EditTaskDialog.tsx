@@ -962,30 +962,17 @@ export const EditTaskDialog = ({
 
                       {(session.parts || []).length > 0 && (
                         <div className="border rounded-md overflow-hidden">
-                          <div className={`grid grid-cols-[1fr_2fr_70px_90px_70px_90px_40px] gap-2 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${sessionColorScheme.part}`}>
-                            <span>By</span>
+                          <div className={`grid grid-cols-[160px_60px_90px_70px_1fr_80px_36px] gap-2 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${sessionColorScheme.part}`}>
                             <span>Name</span>
                             <span>Qty</span>
                             <span>Price</span>
                             <span>Total</span>
                             <span>Description</span>
+                            <span className="text-center">By</span>
                             <span></span>
                           </div>
                           {(session.parts || []).map((part, partIndex) => (
-                            <div key={partIndex} className={`grid grid-cols-[1fr_2fr_70px_90px_70px_90px_40px] gap-2 px-4 py-2 items-center border-t ${sessionColorScheme.part}`}>
-                              {/* Me / Client pill */}
-                              <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5 w-fit">
-                                <button
-                                  type="button"
-                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: false } : p) } : s))}
-                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${!part.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
-                                >Me</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: true } : p) } : s))}
-                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${part.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
-                                >Client</button>
-                              </div>
+                            <div key={partIndex} className={`grid grid-cols-[160px_60px_90px_70px_1fr_80px_36px] gap-2 px-4 py-2 items-center border-t ${sessionColorScheme.part}`}>
                               <Input type="text" value={part.name} onChange={e => {
                                 setSessions(prev => prev.map(s => {
                                   if (s.id === session.id) {
@@ -1009,6 +996,19 @@ export const EditTaskDialog = ({
                                   return s;
                                 }));
                               }} className="h-9 text-sm" placeholder="Optional" />
+                              {/* Me / Client pill */}
+                              <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5 w-fit">
+                                <button
+                                  type="button"
+                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: false } : p) } : s))}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${!part.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+                                >Me</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: true } : p) } : s))}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${part.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
+                                >Client</button>
+                              </div>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeletePart(session.id, partIndex)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
