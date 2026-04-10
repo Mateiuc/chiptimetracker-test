@@ -70,25 +70,36 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     setDrillMonth(null);
   };
 
-  // Cost helper
+  // Cost helper — mirrors calculateClientCosts and TaskCard exactly
   const getTaskCost = (task: Task) => {
-    const partsCost = (task.sessions || []).reduce((sum, s) =>
-      sum + (s.parts || []).reduce((ps, p) => ps + (p.price * p.quantity), 0), 0);
-    if (task.importedSalary != null) return task.importedSalary + partsCost;
+    if (task.importedSalary != null) {
+      const partsCost = (task.sessions || []).reduce((sum, s) =>
+        sum + (s.parts || []).reduce((ps, p) => ps + (p.price * p.quantity), 0), 0);
+      return task.importedSalary + partsCost;
+    }
     const client = clients.find(c => c.id === task.clientId);
     const rate = client?.hourlyRate || settings.defaultHourlyRate;
     const cloningRate = client?.cloningRate || settings.defaultCloningRate || 0;
     const programmingRate = client?.programmingRate || settings.defaultProgrammingRate || 0;
-    const laborCost = (task.sessions || []).reduce((total, session) => {
+    const addKeyRate = client?.addKeyRate || settings.defaultAddKeyRate || 0;
+    const allKeysLostRate = client?.allKeysLostRate || settings.defaultAllKeysLostRate || 0;
+    return (task.sessions || []).reduce((total, session) => {
       const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
       const effectiveTime = (session.chargeMinimumHour && dur < 3600) ? 3600 : dur;
       let sessionCost = (effectiveTime / 3600) * rate;
       if (session.isCloning && cloningRate > 0) sessionCost += cloningRate;
       if (session.isProgramming && programmingRate > 0) sessionCost += programmingRate;
-      return total + sessionCost;
+      if (session.isAddKey && addKeyRate > 0) sessionCost += addKeyRate;
+      if (session.isAllKeysLost && allKeysLostRate > 0) sessionCost += allKeysLostRate;
+      const partsCost = (session.parts || []).reduce((ps, p) => ps + (p.price * p.quantity), 0);
+      return total + sessionCost + partsCost;
     }, 0);
-    return laborCost + partsCost;
   };
+
+  // Time helper — sum from session.periods (same source as cost calc)
+  const getTaskSeconds = (task: Task) =>
+    (task.sessions || []).reduce((total, session) =>
+      total + session.periods.reduce((sum, p) => sum + p.duration, 0), 0);
 
   // Available vehicles filtered by selected client
   const availableVehicles = useMemo(() => {
@@ -175,7 +186,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     filteredTasks.forEach(t => {
       const d = new Date(t.createdAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      monthMap[key] = (monthMap[key] || 0) + (t.totalTime || 0);
+      monthMap[key] = (monthMap[key] || 0) + getTaskSeconds(t);
     });
     return Object.entries(monthMap)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -214,7 +225,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
         })(),
         description: t.sessions?.find(s => s.description)?.description || '—',
         status: t.status,
-        timeWorked: t.totalTime || 0,
+        timeWorked: getTaskSeconds(t),
         cost: getTaskCost(t),
       }));
   }, [drillMonth, filteredTasks, clients, vehicles]);
@@ -231,7 +242,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
       })(),
       description: t.sessions?.find(s => s.description)?.description || '—',
       status: t.status,
-      timeWorked: t.totalTime || 0,
+      timeWorked: getTaskSeconds(t),
       cost: getTaskCost(t),
     }));
     data.sort((a, b) => {
@@ -248,7 +259,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   }, [filteredTasks, clients, vehicles, sortField, sortDir]);
 
   const totalRevenue = useMemo(() => filteredTasks.reduce((s, t) => s + getTaskCost(t), 0), [filteredTasks]);
-  const totalHours = useMemo(() => filteredTasks.reduce((s, t) => s + (t.totalTime || 0), 0) / 3600, [filteredTasks]);
+  const totalHours = useMemo(() => filteredTasks.reduce((s, t) => s + getTaskSeconds(t), 0) / 3600, [filteredTasks]);
   const unpaidBalance = useMemo(() => tasks.filter(t => t.status === 'billed').reduce((s, t) => s + getTaskCost(t), 0), [tasks]);
 
   const toggleSort = (field: typeof sortField) => {
