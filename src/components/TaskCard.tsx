@@ -1122,15 +1122,6 @@ export const TaskCard = ({
 
   // Handle capturing photo for active session
   const handleCapturePhoto = async () => {
-    if (!task.activeSessionId) {
-      toast({
-        title: 'No Active Session',
-        description: 'Start a work session before capturing photos.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       const photo = await Camera.getPhoto({
         quality: 80,
@@ -1349,12 +1340,10 @@ export const TaskCard = ({
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
-                  {((task.sessions || []).length > 0 || (isActive && task.activeSessionId)) && (
-                    <DropdownMenuItem onClick={handleCapturePhoto}>
+                  <DropdownMenuItem onClick={handleCapturePhoto}>
                       <CameraIcon className="h-4 w-4 mr-2" />
                       Capture Photo
                     </DropdownMenuItem>
-                  )}
                   {task.status === 'completed' && <>
                       <DropdownMenuItem onClick={generatePreviewPDF}>
                         <FileText className="h-4 w-4 mr-2" />
