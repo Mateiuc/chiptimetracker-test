@@ -1,4 +1,4 @@
-import { Task, Client, Vehicle, WorkSession, SessionPhoto } from '@/types';
+import { Task, Client, Vehicle, WorkSession, WorkPeriod, SessionPhoto } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1135,38 +1135,61 @@ export const TaskCard = ({
         const currentTasks = await capacitorStorage.getTasks();
         const freshTask = currentTasks.find(t => t.id === task.id);
         
-        if (!freshTask || (!freshTask.activeSessionId && (!freshTask.sessions || freshTask.sessions.length === 0))) {
-          toast({
-            title: 'No Session',
-            description: 'Start a work session first to attach photos.',
-            variant: 'destructive',
-          });
-          return;
-        }
+        if (!freshTask) return;
 
-        // Use active session or fall back to most recent session
-        const targetSessionId = freshTask.activeSessionId || freshTask.sessions[freshTask.sessions.length - 1]?.id;
-        const sessionIndex = freshTask.sessions.findIndex(s => s.id === targetSessionId);
-        
         const photoId = crypto.randomUUID();
-        
+
         // Save photo to filesystem and get the file path
         const filePath = await photoStorageService.savePhoto(
           photo.base64String,
           task.id,
           photoId
         );
-        
+
+        let targetSessionId: string;
+        let sessions: WorkSession[];
+
+        const hasSessions = freshTask.sessions && freshTask.sessions.length > 0;
+
+        if (!hasSessions) {
+          // No sessions at all — auto-create an "info" session with a 1-min period
+          const now = new Date();
+          const periodId = crypto.randomUUID();
+          const newSessionId = crypto.randomUUID();
+          const autoPeriod: WorkPeriod = {
+            id: periodId,
+            startTime: new Date(now.getTime() - 60_000),
+            endTime: now,
+            duration: 60,
+          };
+          const autoSession: WorkSession = {
+            id: newSessionId,
+            createdAt: now,
+            description: 'info',
+            periods: [autoPeriod],
+            parts: [],
+            photos: [],
+          };
+          targetSessionId = newSessionId;
+          sessions = [autoSession];
+        } else {
+          // Use active session or fall back to most recent session
+          targetSessionId = freshTask.activeSessionId || freshTask.sessions[freshTask.sessions.length - 1].id;
+          sessions = freshTask.sessions;
+        }
+
+        const sessionIndex = sessions.findIndex(s => s.id === targetSessionId);
+
         const newPhoto: SessionPhoto = {
           id: photoId,
-          filePath, // Store file path instead of base64
+          filePath,
           capturedAt: new Date(),
           sessionNumber: sessionIndex + 1,
         };
 
         const updatedTask = {
           ...freshTask,
-          sessions: freshTask.sessions.map(session => 
+          sessions: sessions.map(session =>
             session.id === targetSessionId
               ? { ...session, photos: [...(session.photos || []), newPhoto] }
               : session
