@@ -151,8 +151,8 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     (task.sessions || []).forEach(session => {
       const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
       baseLabor += (dur / 3600) * hourlyRate;
-      // chargeMinimumHour: rounds up to 1 hour ONLY if session is under 60 min
-      if (session.chargeMinimumHour && dur < 3600) totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate;
+      // chargeMinimumHour: rounds up to 1 hour if session is under 60 min (check both session and task level)
+      if ((session.chargeMinimumHour || task.chargeMinimumHour) && dur < 3600) totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate;
       if (session.isCloning && cloningRate > 0) totalCloning += cloningRate;
       if (session.isProgramming && programmingRate > 0) totalProgramming += programmingRate;
       if (session.isAddKey && addKeyRate > 0) totalAddKey += addKeyRate;
