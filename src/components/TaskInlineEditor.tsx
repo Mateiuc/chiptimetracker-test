@@ -371,11 +371,22 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                   </div>
                   {(session.parts || []).length > 0 && (
                     <div className="border rounded-md overflow-hidden">
-                      <div className={`grid grid-cols-[1fr_60px_80px_70px_40px] gap-2 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide ${sc.part}`}>
-                        <span>Name</span><span>Qty</span><span>Price</span><span>Total</span><span></span>
+                      <div className={`grid grid-cols-[80px_1fr_60px_80px_70px_40px] gap-2 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide ${sc.part}`}>
+                        <span>By</span><span>Name</span><span>Qty</span><span>Price</span><span>Total</span><span></span>
                       </div>
                       {(session.parts || []).map((part, partIndex) => (
-                        <div key={partIndex} className={`grid grid-cols-[1fr_60px_80px_70px_40px] gap-2 px-3 py-1.5 items-center border-t ${sc.part}`}>
+                        <div key={partIndex} className={`grid grid-cols-[80px_1fr_60px_80px_70px_40px] gap-2 px-3 py-1.5 items-center border-t ${sc.part}`}>
+                          {/* Me / Client pill */}
+                          <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5 w-fit">
+                            <button type="button"
+                              onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: false } : p) } : s))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${!part.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+                            >Me</button>
+                            <button type="button"
+                              onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: true } : p) } : s))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${part.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
+                            >Client</button>
+                          </div>
                           <Input type="text" value={part.name} onChange={e => {
                             setSessions(prev => prev.map(s => {
                               if (s.id === session.id) {
@@ -388,7 +399,7 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                           }} className="h-8 text-xs" placeholder="Part name" />
                           <Input type="number" min="1" value={part.quantity} onChange={e => handleUpdatePartQuantity(session.id, partIndex, parseInt(e.target.value) || 1)} className="h-8 text-xs" />
                           <Input type="number" min="0" step="0.01" value={part.price} onChange={e => handleUpdatePartPrice(session.id, partIndex, parseFloat(e.target.value) || 0)} onFocus={e => e.target.select()} className="h-8 text-xs" />
-                          <span className="text-xs font-medium">{formatCurrency(part.price * part.quantity)}</span>
+                          <span className={`text-xs font-medium ${part.providedByClient ? 'line-through text-muted-foreground' : ''}`}>{formatCurrency(part.price * part.quantity)}</span>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeletePart(session.id, partIndex)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>

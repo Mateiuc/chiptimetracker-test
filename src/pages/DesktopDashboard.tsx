@@ -1750,8 +1750,9 @@ const DesktopDashboard = () => {
                                           {(session.parts || []).length > 0 && (
                                             <div className="flex flex-wrap gap-2 mt-1">
                                               {session.parts.map((part, pi) => (
-                                                <span key={pi} className={`text-xs px-2 py-0.5 rounded border ${sessionColor.part}`}>
-                                                  {part.name} ×{part.quantity} = {formatCurrency(part.price * part.quantity)}
+                                                <span key={pi} className={`text-xs px-2 py-0.5 rounded border ${sessionColor.part} ${part.providedByClient ? 'opacity-60' : ''}`}>
+                                                  {part.providedByClient && <span className="text-green-700 dark:text-green-400 font-medium mr-1">[C]</span>}
+                                                  {part.name} ×{part.quantity}{!part.providedByClient && ` = ${formatCurrency(part.price * part.quantity)}`}
                                                 </span>
                                               ))}
                                             </div>
