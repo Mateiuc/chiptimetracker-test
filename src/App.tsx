@@ -22,7 +22,7 @@ const App = () => (
           <Routes>
             {/* Portal routes - full screen, no phone frame */}
             <Route path="/client-view" element={<ClientPortal />} />
-            <Route path="/chip" element={<DesktopDashboard />} />
+            <Route path="/desk" element={<DesktopDashboard />} />
 
             {/* Main app routes - inside phone frame */}
             <Route path="/*" element={
