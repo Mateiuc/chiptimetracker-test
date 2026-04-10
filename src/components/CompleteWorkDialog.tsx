@@ -32,6 +32,7 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
     quantity: '',
     price: '',
     description: '',
+    providedByClient: false,
   });
 
   const handleAddPart = () => {
@@ -41,9 +42,10 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
         quantity: parseInt(newPart.quantity) || 1,
         price: parseFloat(newPart.price) || 0,
         description: newPart.description || '',
+        providedByClient: newPart.providedByClient || false,
       };
       setParts([...parts, part]);
-      setNewPart({ name: '', quantity: '', price: '', description: '' });
+      setNewPart({ name: '', quantity: '', price: '', description: '', providedByClient: false });
     }
   };
 
@@ -210,7 +212,20 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
                   <CardContent className="p-3 space-y-3">
                     <div className="space-y-2">
                       <div className="space-y-1">
-                        <Label className="text-xs font-medium">Part Name</Label>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium">Part Name</Label>
+                          {/* Me / Client pill */}
+                          <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5">
+                            <button type="button"
+                              onClick={() => setNewPart(p => ({ ...p, providedByClient: false }))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${!newPart.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+                            >Me</button>
+                            <button type="button"
+                              onClick={() => setNewPart(p => ({ ...p, providedByClient: true }))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${newPart.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
+                            >Client</button>
+                          </div>
+                        </div>
                         <Input
                           value={newPart.name}
                           onChange={(e) => setNewPart({ ...newPart, name: e.target.value })}

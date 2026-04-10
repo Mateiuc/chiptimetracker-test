@@ -184,7 +184,7 @@ export function calculateClientCosts(
           sessionAddKeyCost = (session.isAddKey && addKeyRate > 0) ? addKeyRate : 0;
           sessionAllKeysLostCost = (session.isAllKeysLost && allKeysLostRate > 0) ? allKeysLostRate : 0;
           laborCost = baseLaborCost + minHourAdj + sessionCloningCost + sessionProgrammingCost + sessionAddKeyCost + sessionAllKeysLostCost;
-          sessionPartsCost = (session.parts || []).reduce((sum, p) => sum + p.price * p.quantity, 0);
+          sessionPartsCost = (session.parts || []).reduce((sum, p) => sum + (p.providedByClient ? 0 : p.price * p.quantity), 0);
         }
         
         totalLabor += laborCost;

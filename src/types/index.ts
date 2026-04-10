@@ -43,6 +43,7 @@ export interface Part {
   quantity: number;
   price: number;
   description?: string;
+  providedByClient?: boolean; // true = client brought the part, excluded from revenue
 }
 
 export interface SessionPhoto {

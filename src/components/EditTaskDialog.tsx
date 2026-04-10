@@ -703,7 +703,7 @@ export const EditTaskDialog = ({
                     </div>
                     {(session.parts || []).map((part, partIndex) => (
                       <div key={partIndex} className={`${sessionColorScheme.part} border rounded-md p-1 space-y-1`}>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-1">
                           <Input type="text" value={part.name} onChange={e => {
                             setSessions(prev => prev.map(s => {
                               if (s.id === session.id) {
@@ -714,6 +714,17 @@ export const EditTaskDialog = ({
                               return s;
                             }));
                           }} className="h-6 text-xs flex-1" placeholder="Part name" />
+                          {/* Me / Client pill */}
+                          <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5 shrink-0">
+                            <button type="button"
+                              onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: false } : p) } : s))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${!part.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+                            >Me</button>
+                            <button type="button"
+                              onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: true } : p) } : s))}
+                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors ${part.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
+                            >Client</button>
+                          </div>
                           <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={() => handleDeletePart(session.id, partIndex)}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -726,7 +737,7 @@ export const EditTaskDialog = ({
                             <Input type="number" min="0" step="0.01" value={part.price} onChange={e => handleUpdatePartPrice(session.id, partIndex, parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="h-7 text-xs" />
                           </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">Total: {formatCurrency(part.price * part.quantity)}</div>
+                        <div className={`text-xs ${part.providedByClient ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}>Total: {formatCurrency(part.price * part.quantity)}{part.providedByClient ? ' (client)' : ''}</div>
                       </div>
                     ))}
                   </div>
@@ -951,7 +962,8 @@ export const EditTaskDialog = ({
 
                       {(session.parts || []).length > 0 && (
                         <div className="border rounded-md overflow-hidden">
-                          <div className={`grid grid-cols-[1fr_80px_100px_80px_100px_40px] gap-2 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${sessionColorScheme.part}`}>
+                          <div className={`grid grid-cols-[1fr_2fr_70px_90px_70px_90px_40px] gap-2 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide ${sessionColorScheme.part}`}>
+                            <span>By</span>
                             <span>Name</span>
                             <span>Qty</span>
                             <span>Price</span>
@@ -960,7 +972,20 @@ export const EditTaskDialog = ({
                             <span></span>
                           </div>
                           {(session.parts || []).map((part, partIndex) => (
-                            <div key={partIndex} className={`grid grid-cols-[1fr_80px_100px_80px_100px_40px] gap-2 px-4 py-2 items-center border-t ${sessionColorScheme.part}`}>
+                            <div key={partIndex} className={`grid grid-cols-[1fr_2fr_70px_90px_70px_90px_40px] gap-2 px-4 py-2 items-center border-t ${sessionColorScheme.part}`}>
+                              {/* Me / Client pill */}
+                              <div className="flex bg-muted rounded-full border border-border p-0.5 gap-0.5 w-fit">
+                                <button
+                                  type="button"
+                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: false } : p) } : s))}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${!part.providedByClient ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+                                >Me</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, parts: s.parts.map((p, i) => i === partIndex ? { ...p, providedByClient: true } : p) } : s))}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors ${part.providedByClient ? 'bg-green-700 text-white' : 'text-muted-foreground'}`}
+                                >Client</button>
+                              </div>
                               <Input type="text" value={part.name} onChange={e => {
                                 setSessions(prev => prev.map(s => {
                                   if (s.id === session.id) {
@@ -973,7 +998,7 @@ export const EditTaskDialog = ({
                               }} className="h-9 text-sm" placeholder="Part name" />
                               <Input type="number" min="1" value={part.quantity} onChange={e => handleUpdatePartQuantity(session.id, partIndex, parseInt(e.target.value) || 1)} className="h-9 text-sm" />
                               <Input type="number" min="0" step="0.01" value={part.price} onChange={e => handleUpdatePartPrice(session.id, partIndex, parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="h-9 text-sm" />
-                              <span className="text-sm font-medium">{formatCurrency(part.price * part.quantity)}</span>
+                              <span className={`text-sm font-medium ${part.providedByClient ? 'line-through text-muted-foreground' : ''}`}>{formatCurrency(part.price * part.quantity)}</span>
                               <Input type="text" value={part.description || ''} onChange={e => {
                                 setSessions(prev => prev.map(s => {
                                   if (s.id === session.id) {

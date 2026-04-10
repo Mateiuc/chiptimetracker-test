@@ -1305,7 +1305,7 @@ export const TaskCard = ({
   const calculatedLabor = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
   // importedSalary = final revenue already, no parts added
   const partsCost = task.importedSalary != null ? 0 : (task.sessions || []).reduce((total, session) => {
-    return total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0);
+    return total + (session.parts || []).reduce((sum, part) => sum + (part.providedByClient ? 0 : part.price * part.quantity), 0);
   }, 0);
   const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
   const totalCost = laborCost + partsCost;

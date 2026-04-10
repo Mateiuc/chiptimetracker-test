@@ -121,6 +121,7 @@ export const exportToXML = (data: DatabaseExport): string => {
             xml += `quantity="${escapeXML(part.quantity)}" `;
             xml += `price="${escapeXML(part.price)}" `;
             if (part.description) xml += `description="${escapeXML(part.description)}" `;
+            if (part.providedByClient) xml += `providedByClient="true" `;
             xml += `/>\n`;
           });
           xml += '          </Parts>\n';
@@ -313,6 +314,7 @@ export const parseXMLString = (xmlText: string): DatabaseExport => {
                 quantity: parseFloat(partNode.getAttribute('quantity') || '1'),
                 price: parseFloat(partNode.getAttribute('price') || '0'),
                 description: partNode.getAttribute('description') || undefined,
+                providedByClient: partNode.getAttribute('providedByClient') === 'true' || undefined,
               });
             });
           }

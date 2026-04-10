@@ -160,7 +160,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     });
     const laborCost = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
     const partsCost = (task.sessions || []).reduce((total, session) =>
-      total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0), 0);
+      total + (session.parts || []).reduce((sum, part) => sum + (part.providedByClient ? 0 : part.price * part.quantity), 0), 0);
     return laborCost + partsCost;
   };
 
