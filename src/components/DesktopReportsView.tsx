@@ -139,6 +139,8 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   };
 
   const getTaskCost = (task: Task) => {
+    // importedSalary = already the final revenue, return exactly as stored
+    if (task.importedSalary != null) return task.importedSalary;
     const client = clients.find(c => c.id === task.clientId);
     const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate;
     const cloningRate = client?.cloningRate || (settings as any).defaultCloningRate || 0;
@@ -149,14 +151,14 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     (task.sessions || []).forEach(session => {
       const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
       baseLabor += (dur / 3600) * hourlyRate;
+      // chargeMinimumHour: rounds up to 1 hour ONLY if session is under 60 min
       if (session.chargeMinimumHour && dur < 3600) totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate;
       if (session.isCloning && cloningRate > 0) totalCloning += cloningRate;
       if (session.isProgramming && programmingRate > 0) totalProgramming += programmingRate;
       if (session.isAddKey && addKeyRate > 0) totalAddKey += addKeyRate;
       if (session.isAllKeysLost && allKeysLostRate > 0) totalAllKeysLost += allKeysLostRate;
     });
-    const calculatedLabor = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
-    const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
+    const laborCost = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
     const partsCost = (task.sessions || []).reduce((total, session) =>
       total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0), 0);
     return laborCost + partsCost;

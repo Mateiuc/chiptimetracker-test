@@ -1303,10 +1303,11 @@ export const TaskCard = ({
     if (session.isAllKeysLost && allKeysLostRate > 0) { totalAllKeysLost += allKeysLostRate; allKeysLostCount++; }
   });
   const calculatedLabor = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
-  const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
-  const partsCost = (task.sessions || []).reduce((total, session) => {
+  // importedSalary = final revenue already, no parts added
+  const partsCost = task.importedSalary != null ? 0 : (task.sessions || []).reduce((total, session) => {
     return total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0);
   }, 0);
+  const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
   const totalCost = laborCost + partsCost;
   return <Card className={`overflow-hidden transition-all hover:shadow-md ${colorScheme.card} border ${colorScheme.border}`}>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>

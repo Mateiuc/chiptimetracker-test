@@ -161,6 +161,7 @@ export function calculateClientCosts(
 
     vehicleTasks.forEach(task => {
       let diagnosticShown = false;
+      let importedSalaryApplied = false; // ensure importedSalary counted exactly once
       task.sessions.forEach(session => {
         const duration = session.periods.reduce((sum, p) => sum + p.duration, 0);
         let laborCost: number;
@@ -169,8 +170,12 @@ export function calculateClientCosts(
         let sessionProgrammingCost = 0;
         let sessionAddKeyCost = 0;
         let sessionAllKeysLostCost = 0;
+        let sessionPartsCost = 0;
         if (task.importedSalary != null) {
-          laborCost = task.importedSalary;
+          // importedSalary = final revenue for the entire task, no modification
+          // Apply to first session only, zero for the rest, never add parts
+          laborCost = importedSalaryApplied ? 0 : task.importedSalary;
+          importedSalaryApplied = true;
         } else {
           const baseLaborCost = (duration / 3600) * hourlyRate;
           minHourAdj = (session.chargeMinimumHour && duration < 3600) ? ((3600 - duration) / 3600) * hourlyRate : 0;
@@ -179,11 +184,11 @@ export function calculateClientCosts(
           sessionAddKeyCost = (session.isAddKey && addKeyRate > 0) ? addKeyRate : 0;
           sessionAllKeysLostCost = (session.isAllKeysLost && allKeysLostRate > 0) ? allKeysLostRate : 0;
           laborCost = baseLaborCost + minHourAdj + sessionCloningCost + sessionProgrammingCost + sessionAddKeyCost + sessionAllKeysLostCost;
+          sessionPartsCost = (session.parts || []).reduce((sum, p) => sum + p.price * p.quantity, 0);
         }
-        const partsCost = (session.parts || []).reduce((sum, p) => sum + p.price * p.quantity, 0);
         
         totalLabor += laborCost;
-        totalParts += partsCost;
+        totalParts += sessionPartsCost;
         totalCloning += sessionCloningCost;
         totalProgramming += sessionProgrammingCost;
         totalAddKey += sessionAddKeyCost;
@@ -207,8 +212,8 @@ export function calculateClientCosts(
           addKeyCost: sessionAddKeyCost,
           allKeysLostCost: sessionAllKeysLostCost,
           minHourAdj,
-          parts: session.parts || [],
-          partsCost,
+          parts: task.importedSalary != null ? [] : (session.parts || []),
+          partsCost: sessionPartsCost,
           status: task.status,
           photoUrls: (session.photos || [])
             .filter(p => p.cloudUrl)
