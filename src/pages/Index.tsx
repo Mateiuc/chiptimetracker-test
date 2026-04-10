@@ -668,11 +668,7 @@ const Index = () => {
               ) : (
                 <span className="text-xs text-muted-foreground">{activeTasks.length} active job{activeTasks.length !== 1 ? 's' : ''}</span>
               )}
-              {unbilledCompleted > 0 && (
-                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                  {unbilledCompleted} to bill
-                </span>
-              )}
+
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -693,7 +689,6 @@ const Index = () => {
             <TabsTrigger value="active">Active ({activeTasks.length})</TabsTrigger>
             <TabsTrigger value="completed">
               Completed ({completedTasks.length})
-              {unbilledCompleted > 0 && <span className="ml-1.5 bg-orange-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold">{unbilledCompleted}</span>}
             </TabsTrigger>
           </TabsList>
 
