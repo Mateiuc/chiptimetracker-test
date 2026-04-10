@@ -10,6 +10,7 @@ import { CompleteWorkDialog } from '@/components/CompleteWorkDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { CloudSyncIndicator } from '@/components/CloudSyncIndicator';
 import { useClients, useVehicles, useTasks, useSettings, useCloudSync } from '@/hooks/useStorage';
+import { capacitorStorage } from '@/lib/capacitorStorage';
 import { Task, WorkSession, WorkPeriod, Part, Client, Vehicle } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
 import { migrateToCapacitorStorage } from '@/lib/storageMigration';
@@ -60,6 +61,25 @@ const Index = () => {
     };
     performMigration();
   }, [toast]);
+
+  // After a backup import, re-read all data from storage and update React state directly
+  // (no page reload — avoids cloud sync overwriting the freshly imported data)
+  useEffect(() => {
+    const handleImportComplete = async () => {
+      const [freshClients, freshVehicles, freshTasks, freshSettings] = await Promise.all([
+        capacitorStorage.getClients(),
+        capacitorStorage.getVehicles(),
+        capacitorStorage.getTasks(),
+        capacitorStorage.getSettings(),
+      ]);
+      clientsHook.replaceAll(freshClients);
+      vehiclesHook.replaceAll(freshVehicles);
+      tasksHook.replaceAll(freshTasks);
+      settingsHook.replaceAll(freshSettings);
+    };
+    window.addEventListener('chiptime:import-complete', handleImportComplete);
+    return () => window.removeEventListener('chiptime:import-complete', handleImportComplete);
+  }, [clientsHook, vehiclesHook, tasksHook, settingsHook]);
 
 
   const [showAddVehicle, setShowAddVehicle] = useState(false);

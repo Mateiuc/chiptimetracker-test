@@ -6,7 +6,6 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { appSyncService } from '@/services/appSyncService';
 
 // Wrapper that respects notification settings
 const toast = async (options: Parameters<typeof baseToast>[0]) => {
@@ -112,16 +111,12 @@ export class BackupManager {
               const data = await parseXMLFile(file);
               await capacitorStorage.importAllData(data);
 
-              // Stamp local timestamp so sync-on-remount doesn't
-              // see cloud as newer and overwrite the imported data
-              appSyncService.setLocalUpdatedAt(new Date().toISOString());
-
               toast({
                 title: "Backup Restored",
-                description: "Your data has been successfully restored. The app will reload.",
+                description: "Your data has been successfully restored.",
               });
 
-              setTimeout(() => window.location.reload(), 2000);
+              window.dispatchEvent(new CustomEvent('chiptime:import-complete'));
               resolve();
             } catch (error) {
               reject(error);
@@ -176,16 +171,12 @@ export class BackupManager {
         
         await capacitorStorage.importAllData(data);
 
-        // Stamp local timestamp so sync-on-remount doesn't
-        // see cloud as newer and overwrite the imported data
-        appSyncService.setLocalUpdatedAt(new Date().toISOString());
-
         toast({
           title: "Backup Restored",
-          description: "Your data has been successfully restored. The app will reload.",
+          description: "Your data has been successfully restored.",
         });
-        
-        setTimeout(() => window.location.reload(), 2000);
+
+        window.dispatchEvent(new CustomEvent('chiptime:import-complete'));
       }
     } catch (error) {
       console.error('Import backup failed:', error);

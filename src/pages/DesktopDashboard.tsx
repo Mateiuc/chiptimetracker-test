@@ -16,6 +16,7 @@ import { AddVehiclePage } from '@/components/AddVehiclePage';
 import { AddVehicleDialog } from '@/components/AddVehicleDialog';
 
 import { useClients, useVehicles, useTasks, useSettings, useCloudSync, setCloudPushEnabled, pushNow } from '@/hooks/useStorage';
+import { capacitorStorage } from '@/lib/capacitorStorage';
 import { Task, Client, Vehicle, WorkSession } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDuration, formatCurrency, formatTime } from '@/lib/formatTime';
@@ -81,6 +82,24 @@ const DesktopDashboard = () => {
   useEffect(() => {
     refresh();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // After a backup import, re-read all data from storage and update React state directly
+  useEffect(() => {
+    const handleImportComplete = async () => {
+      const [freshClients, freshVehicles, freshTasks, freshSettings] = await Promise.all([
+        capacitorStorage.getClients(),
+        capacitorStorage.getVehicles(),
+        capacitorStorage.getTasks(),
+        capacitorStorage.getSettings(),
+      ]);
+      clientsHook.replaceAll(freshClients);
+      vehiclesHook.replaceAll(freshVehicles);
+      tasksHook.replaceAll(freshTasks);
+      settingsHook.replaceAll(freshSettings);
+    };
+    window.addEventListener('chiptime:import-complete', handleImportComplete);
+    return () => window.removeEventListener('chiptime:import-complete', handleImportComplete);
+  }, [clientsHook, vehiclesHook, tasksHook, settingsHook]);
 
   const handleSaveToCloud = async () => {
     setSaving(true);
