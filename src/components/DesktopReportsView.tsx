@@ -249,6 +249,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
 
   const totalRevenue = useMemo(() => filteredTasks.reduce((s, t) => s + getTaskCost(t), 0), [filteredTasks]);
   const totalHours = useMemo(() => filteredTasks.reduce((s, t) => s + (t.totalTime || 0), 0) / 3600, [filteredTasks]);
+  const unpaidBalance = useMemo(() => tasks.filter(t => t.status === 'billed').reduce((s, t) => s + getTaskCost(t), 0), [tasks]);
 
   const toggleSort = (field: typeof sortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -314,6 +315,13 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
           <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8">
             <RotateCcw className="h-3 w-3 mr-1" /> Reset
           </Button>
+
+          {unpaidBalance > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700">
+              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Unpaid:</span>
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{formatCurrency(unpaidBalance)}</span>
+            </div>
+          )}
 
           <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
             <span><strong className="text-foreground">{filteredTasks.length}</strong> tasks</span>
