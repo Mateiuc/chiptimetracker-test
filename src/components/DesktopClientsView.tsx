@@ -291,7 +291,7 @@ export const DesktopClientsView = ({
                     <Input
                       value={editFormData.portalBusinessName || ''}
                       onChange={e => setEditFormData(p => ({ ...p, portalBusinessName: e.target.value || undefined }))}
-                      placeholder={settings.portalBusinessName || 'e.g. ChipTime Auto Keys'}
+                      placeholder={settings.portalBusinessName || "e.g. Chip's Time Auto Keys"}
                     />
                   </div>
                   <div className="space-y-2">

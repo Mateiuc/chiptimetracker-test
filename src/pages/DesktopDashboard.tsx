@@ -1003,7 +1003,7 @@ const DesktopDashboard = () => {
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-xl font-bold text-primary-foreground leading-tight">ChipTime</h1>
+              <h1 className="text-xl font-bold text-primary-foreground leading-tight">Chip's Time</h1>
               <p className="text-xs text-primary-foreground/60">Desktop Dashboard</p>
             </div>
             {/* Quick KPI pills */}

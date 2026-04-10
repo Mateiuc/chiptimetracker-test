@@ -655,7 +655,7 @@ const Index = () => {
       <header className="border-b bg-primary/20 backdrop-blur-sm shadow-md sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-primary leading-tight">ChipTime</h1>
+            <h1 className="text-lg font-bold text-primary leading-tight">Chip's Time</h1>
             <div className="flex items-center gap-3 mt-0.5">
               {runningTask ? (
                 <span className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium">

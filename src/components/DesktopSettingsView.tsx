@@ -267,7 +267,7 @@ export const DesktopSettingsView = ({ settings, onSave }: DesktopSettingsViewPro
             <Input
               value={portalBusinessName}
               onChange={e => setPortalBusinessName(e.target.value)}
-              placeholder="e.g. ChipTime Auto Keys"
+              placeholder="e.g. Chip's Time Auto Keys"
             />
             <p className="text-xs text-muted-foreground">Shown in the portal header instead of "Service Portal"</p>
           </div>
