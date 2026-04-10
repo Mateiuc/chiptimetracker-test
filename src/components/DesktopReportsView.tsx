@@ -139,28 +139,27 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   };
 
   const getTaskCost = (task: Task) => {
-    if (task.importedSalary != null) {
-      const partsCost = (task.sessions || []).reduce((sum, s) =>
-        sum + (s.parts || []).reduce((ps, p) => ps + (p.price * p.quantity), 0), 0);
-      return task.importedSalary + partsCost;
-    }
     const client = clients.find(c => c.id === task.clientId);
-    const rate = client?.hourlyRate || settings.defaultHourlyRate;
-    const cloningRate = client?.cloningRate || settings.defaultCloningRate || 0;
-    const programmingRate = client?.programmingRate || settings.defaultProgrammingRate || 0;
-    const addKeyRate = client?.addKeyRate || settings.defaultAddKeyRate || 0;
-    const allKeysLostRate = client?.allKeysLostRate || settings.defaultAllKeysLostRate || 0;
-    return (task.sessions || []).reduce((total, session) => {
+    const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate;
+    const cloningRate = client?.cloningRate || (settings as any).defaultCloningRate || 0;
+    const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
+    const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
+    const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
+    let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
+    (task.sessions || []).forEach(session => {
       const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
-      const effectiveTime = (session.chargeMinimumHour && dur < 3600) ? 3600 : dur;
-      let sessionCost = (effectiveTime / 3600) * rate;
-      if (session.isCloning && cloningRate > 0) sessionCost += cloningRate;
-      if (session.isProgramming && programmingRate > 0) sessionCost += programmingRate;
-      if (session.isAddKey && addKeyRate > 0) sessionCost += addKeyRate;
-      if (session.isAllKeysLost && allKeysLostRate > 0) sessionCost += allKeysLostRate;
-      const partsCost = (session.parts || []).reduce((ps, p) => ps + (p.price * p.quantity), 0);
-      return total + sessionCost + partsCost;
-    }, 0);
+      baseLabor += (dur / 3600) * hourlyRate;
+      if (session.chargeMinimumHour && dur < 3600) totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate;
+      if (session.isCloning && cloningRate > 0) totalCloning += cloningRate;
+      if (session.isProgramming && programmingRate > 0) totalProgramming += programmingRate;
+      if (session.isAddKey && addKeyRate > 0) totalAddKey += addKeyRate;
+      if (session.isAllKeysLost && allKeysLostRate > 0) totalAllKeysLost += allKeysLostRate;
+    });
+    const calculatedLabor = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
+    const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
+    const partsCost = (task.sessions || []).reduce((total, session) =>
+      total + (session.parts || []).reduce((sum, part) => sum + part.price * part.quantity, 0), 0);
+    return laborCost + partsCost;
   };
 
   const getTaskSeconds = (task: Task) =>
