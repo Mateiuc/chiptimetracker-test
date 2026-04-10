@@ -1296,7 +1296,7 @@ export const TaskCard = ({
   (task.sessions || []).forEach(session => {
     const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
     baseLabor += (dur / 3600) * hourlyRate;
-    if ((session.chargeMinimumHour || task.chargeMinimumHour) && dur < 3600) { totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate; minHourCount++; }
+    if (session.chargeMinimumHour && dur < 3600) { totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate; minHourCount++; }
     if (session.isCloning && cloningRate > 0) { totalCloning += cloningRate; cloningCount++; }
     if (session.isProgramming && programmingRate > 0) { totalProgramming += programmingRate; programmingCount++; }
     if (session.isAddKey && addKeyRate > 0) { totalAddKey += addKeyRate; addKeyCount++; }

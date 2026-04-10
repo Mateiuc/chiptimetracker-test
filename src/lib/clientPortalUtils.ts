@@ -178,7 +178,7 @@ export function calculateClientCosts(
           importedSalaryApplied = true;
         } else {
           const baseLaborCost = (duration / 3600) * hourlyRate;
-          minHourAdj = ((session.chargeMinimumHour || task.chargeMinimumHour) && duration < 3600) ? ((3600 - duration) / 3600) * hourlyRate : 0;
+          minHourAdj = (session.chargeMinimumHour && duration < 3600) ? ((3600 - duration) / 3600) * hourlyRate : 0;
           sessionCloningCost = (session.isCloning && cloningRate > 0) ? cloningRate : 0;
           sessionProgrammingCost = (session.isProgramming && programmingRate > 0) ? programmingRate : 0;
           sessionAddKeyCost = (session.isAddKey && addKeyRate > 0) ? addKeyRate : 0;
