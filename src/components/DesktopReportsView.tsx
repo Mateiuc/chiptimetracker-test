@@ -119,6 +119,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   const [rptShowCompleted, setRptShowCompleted] = useState(true);
   const [rptShowBilled, setRptShowBilled] = useState(true);
   const [rptShowPaid, setRptShowPaid] = useState(true);
+  const [rptShowActive, setRptShowActive] = useState(true);
   const [sortField, setSortField] = useState<'date' | 'cost' | 'client' | 'status'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -132,7 +133,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   const resetFilters = () => {
     setRptClient('all'); setRptVehicle('all');
     setRptDateFrom(undefined); setRptDateTo(undefined);
-    setRptShowCompleted(true); setRptShowBilled(true); setRptShowPaid(true);
+    setRptShowCompleted(true); setRptShowBilled(true); setRptShowPaid(true); setRptShowActive(true);
     setDrillRevTime(null); setDrillClient(null); setDrillVehicle(null);
     setDrillStatus(null); setDrillHours(null); setDrillCars(null);
   };
@@ -199,9 +200,10 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
       if (t.status === 'completed' && !rptShowCompleted) return false;
       if (t.status === 'billed' && !rptShowBilled) return false;
       if (t.status === 'paid' && !rptShowPaid) return false;
+      if (['pending', 'in-progress', 'paused'].includes(t.status) && !rptShowActive) return false;
       return true;
     });
-  }, [tasks, rptClient, rptVehicle, rptDateFrom, rptDateTo, rptShowCompleted, rptShowBilled, rptShowPaid]);
+  }, [tasks, rptClient, rptVehicle, rptDateFrom, rptDateTo, rptShowCompleted, rptShowBilled, rptShowPaid, rptShowActive]);
 
   const revenueOverTime = useMemo(() => {
     const monthMap: Record<string, number> = {};
@@ -376,6 +378,8 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
             </SelectContent>
           </Select>
           <div className="flex items-center gap-1">
+            <Button size="sm" variant={rptShowActive ? 'default' : 'outline'} onClick={() => setRptShowActive(!rptShowActive)}
+              className={cn("h-8 text-xs", rptShowActive && "bg-blue-600 hover:bg-blue-700")}>Active</Button>
             <Button size="sm" variant={rptShowCompleted ? 'default' : 'outline'} onClick={() => setRptShowCompleted(!rptShowCompleted)}
               className={cn("h-8 text-xs", rptShowCompleted && "bg-green-600 hover:bg-green-700")}>Completed</Button>
             <Button size="sm" variant={rptShowBilled ? 'default' : 'outline'} onClick={() => setRptShowBilled(!rptShowBilled)}
