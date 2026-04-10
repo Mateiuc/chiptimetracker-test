@@ -1329,9 +1329,7 @@ export const TaskCard = ({
                 </span>
               )}
               <span className="capitalize">{task.status.replace('-', ' ')}</span>
-              {task.needsFollowUp && (
-                <span className="ml-1 text-orange-500 font-bold" title="Needs follow-up">🔁 Return</span>
-              )}
+
             </div>
             {task.status === 'in-progress' && task.startTime && (
               <span className="font-mono font-bold">{formatDuration(displayTime)}</span>
