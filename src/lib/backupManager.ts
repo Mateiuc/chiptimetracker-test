@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { appSyncService } from '@/services/appSyncService';
 
 // Wrapper that respects notification settings
 const toast = async (options: Parameters<typeof baseToast>[0]) => {
@@ -110,12 +111,27 @@ export class BackupManager {
             try {
               const data = await parseXMLFile(file);
               await capacitorStorage.importAllData(data);
-              
+
+              // Push imported data to cloud and stamp local timestamp
+              // so the sync-on-remount doesn't overwrite with stale cloud data
+              try {
+                await appSyncService.pushToCloud({
+                  clients: data.clients || [],
+                  vehicles: data.vehicles || [],
+                  tasks: data.tasks || [],
+                  settings: data.settings || {},
+                });
+              } catch (syncErr) {
+                // No internet — just stamp local so cloud pull is skipped on reload
+                appSyncService.setLocalUpdatedAt(new Date().toISOString());
+                console.warn('[BackupManager] Cloud push after import failed, stamped local ts:', syncErr);
+              }
+
               toast({
                 title: "Backup Restored",
                 description: "Your data has been successfully restored. The app will reload.",
               });
-              
+
               setTimeout(() => window.location.reload(), 2000);
               resolve();
             } catch (error) {
@@ -170,7 +186,22 @@ export class BackupManager {
         const data = await parseXMLFile(tempFile);
         
         await capacitorStorage.importAllData(data);
-        
+
+        // Push imported data to cloud and stamp local timestamp
+        // so the sync-on-remount doesn't overwrite with stale cloud data
+        try {
+          await appSyncService.pushToCloud({
+            clients: data.clients || [],
+            vehicles: data.vehicles || [],
+            tasks: data.tasks || [],
+            settings: data.settings || {},
+          });
+        } catch (syncErr) {
+          // No internet — just stamp local so cloud pull is skipped on reload
+          appSyncService.setLocalUpdatedAt(new Date().toISOString());
+          console.warn('[BackupManager] Cloud push after import failed, stamped local ts:', syncErr);
+        }
+
         toast({
           title: "Backup Restored",
           description: "Your data has been successfully restored. The app will reload.",
