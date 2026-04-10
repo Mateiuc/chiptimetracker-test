@@ -112,20 +112,9 @@ export class BackupManager {
               const data = await parseXMLFile(file);
               await capacitorStorage.importAllData(data);
 
-              // Push imported data to cloud and stamp local timestamp
-              // so the sync-on-remount doesn't overwrite with stale cloud data
-              try {
-                await appSyncService.pushToCloud({
-                  clients: data.clients || [],
-                  vehicles: data.vehicles || [],
-                  tasks: data.tasks || [],
-                  settings: data.settings || {},
-                });
-              } catch (syncErr) {
-                // No internet — just stamp local so cloud pull is skipped on reload
-                appSyncService.setLocalUpdatedAt(new Date().toISOString());
-                console.warn('[BackupManager] Cloud push after import failed, stamped local ts:', syncErr);
-              }
+              // Stamp local timestamp so sync-on-remount doesn't
+              // see cloud as newer and overwrite the imported data
+              appSyncService.setLocalUpdatedAt(new Date().toISOString());
 
               toast({
                 title: "Backup Restored",
@@ -187,20 +176,9 @@ export class BackupManager {
         
         await capacitorStorage.importAllData(data);
 
-        // Push imported data to cloud and stamp local timestamp
-        // so the sync-on-remount doesn't overwrite with stale cloud data
-        try {
-          await appSyncService.pushToCloud({
-            clients: data.clients || [],
-            vehicles: data.vehicles || [],
-            tasks: data.tasks || [],
-            settings: data.settings || {},
-          });
-        } catch (syncErr) {
-          // No internet — just stamp local so cloud pull is skipped on reload
-          appSyncService.setLocalUpdatedAt(new Date().toISOString());
-          console.warn('[BackupManager] Cloud push after import failed, stamped local ts:', syncErr);
-        }
+        // Stamp local timestamp so sync-on-remount doesn't
+        // see cloud as newer and overwrite the imported data
+        appSyncService.setLocalUpdatedAt(new Date().toISOString());
 
         toast({
           title: "Backup Restored",
