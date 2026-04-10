@@ -91,6 +91,11 @@ export const exportToXML = (data: DatabaseExport): string => {
         xml += `createdAt="${formatDate(session.createdAt)}" `;
         if (session.completedAt) xml += `completedAt="${formatDate(session.completedAt)}" `;
         if (session.description) xml += `description="${escapeXML(session.description)}" `;
+        if (session.chargeMinimumHour) xml += `chargeMinimumHour="true" `;
+        if (session.isCloning) xml += `isCloning="true" `;
+        if (session.isProgramming) xml += `isProgramming="true" `;
+        if (session.isAddKey) xml += `isAddKey="true" `;
+        if (session.isAllKeysLost) xml += `isAllKeysLost="true" `;
         xml += `>\n`;
 
         // Periods
@@ -280,6 +285,11 @@ export const parseXMLString = (xmlText: string): DatabaseExport => {
           if (sessionNode.getAttribute('description')) {
             session.description = sessionNode.getAttribute('description')!;
           }
+          if (sessionNode.getAttribute('chargeMinimumHour') === 'true') session.chargeMinimumHour = true;
+          if (sessionNode.getAttribute('isCloning') === 'true') session.isCloning = true;
+          if (sessionNode.getAttribute('isProgramming') === 'true') session.isProgramming = true;
+          if (sessionNode.getAttribute('isAddKey') === 'true') session.isAddKey = true;
+          if (sessionNode.getAttribute('isAllKeysLost') === 'true') session.isAllKeysLost = true;
 
           // Parse Periods
           const periodsNode = sessionNode.querySelector('Periods');
