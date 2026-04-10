@@ -685,9 +685,7 @@ const Index = () => {
                   </span>
                   Timer running
                 </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">{activeTasks.length} active job{activeTasks.length !== 1 ? 's' : ''}</span>
-              )}
+              ) : null}
 
             </div>
           </div>

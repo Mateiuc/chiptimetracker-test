@@ -70,7 +70,7 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
     onComplete(description, finalParts, needsFollowUp, chargeMinimumHour, isCloning, isProgramming, isAddKey, isAllKeysLost);
     setDescription('');
     setParts([]);
-    setNewPart({ name: '', quantity: '', price: '', description: '' });
+    setNewPart({ name: '', quantity: '', price: '', description: '', providedByClient: false });
     setNeedsFollowUp(false);
     setChargeMinimumHour(false);
     setIsCloning(false);
