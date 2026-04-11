@@ -1294,9 +1294,22 @@ export const TaskCard = ({
   let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
   let minHourCount = 0, cloningCount = 0, programmingCount = 0, addKeyCount = 0, allKeysLostCount = 0;
   (task.sessions || []).forEach(session => {
-    const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
-    baseLabor += (dur / 3600) * hourlyRate;
-    if (session.chargeMinimumHour && dur < 3600) { totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate; minHourCount++; }
+    // Period-level minimum hour — each flagged period charged independently
+    session.periods.forEach(period => {
+      if (period.chargeMinimumHour && period.duration < 3600) {
+        baseLabor += hourlyRate; // full hour
+        minHourCount++;
+      } else {
+        baseLabor += (period.duration / 3600) * hourlyRate;
+      }
+    });
+    // Legacy session-level fallback for old data without period flags
+    const sessionDur = session.periods.reduce((sum, p) => sum + p.duration, 0);
+    const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
+    if (!hasPeriodFlags && session.chargeMinimumHour && sessionDur < 3600) {
+      totalMinHourAdj += ((3600 - sessionDur) / 3600) * hourlyRate;
+      minHourCount++;
+    }
     if (session.isCloning && cloningRate > 0) { totalCloning += cloningRate; cloningCount++; }
     if (session.isProgramming && programmingRate > 0) { totalProgramming += programmingRate; programmingCount++; }
     if (session.isAddKey && addKeyRate > 0) { totalAddKey += addKeyRate; addKeyCount++; }

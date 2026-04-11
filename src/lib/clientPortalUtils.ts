@@ -177,8 +177,17 @@ export function calculateClientCosts(
           laborCost = importedSalaryApplied ? 0 : task.importedSalary;
           importedSalaryApplied = true;
         } else {
-          const baseLaborCost = (duration / 3600) * hourlyRate;
-          minHourAdj = (session.chargeMinimumHour && duration < 3600) ? ((3600 - duration) / 3600) * hourlyRate : 0;
+          // Period-level minimum hour — each flagged period charged independently
+          const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
+          const baseLaborCost = session.periods.reduce((sum, period) => {
+            if (period.chargeMinimumHour && period.duration < 3600) {
+              return sum + hourlyRate; // full hour
+            }
+            return sum + (period.duration / 3600) * hourlyRate;
+          }, 0);
+          // Legacy session-level fallback for old data without period flags
+          minHourAdj = (!hasPeriodFlags && session.chargeMinimumHour && duration < 3600)
+            ? ((3600 - duration) / 3600) * hourlyRate : 0;
           sessionCloningCost = (session.isCloning && cloningRate > 0) ? cloningRate : 0;
           sessionProgrammingCost = (session.isProgramming && programmingRate > 0) ? programmingRate : 0;
           sessionAddKeyCost = (session.isAddKey && addKeyRate > 0) ? addKeyRate : 0;

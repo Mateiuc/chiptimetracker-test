@@ -60,6 +60,7 @@ export interface WorkPeriod {
   startTime: Date;
   endTime: Date;
   duration: number; // seconds
+  chargeMinimumHour?: boolean; // charge this period as minimum 1 hour if under 60min
 }
 
 export interface WorkSession {

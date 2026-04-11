@@ -677,18 +677,71 @@ export const EditTaskDialog = ({
                       </Button>
                     </div>
                     {session.periods.map((period, periodIndex) => (
-                      <div key={period.id} className={`${sessionColorScheme.period} border rounded-md p-1 space-y-1`}>
-                        <div className="flex items-center justify-between px-1 py-0.5">
+                      <div key={period.id} className={`${sessionColorScheme.period} border rounded-xl p-3 space-y-3`}>
+                        {/* Header: Period N · duration · Min1hr · delete */}
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-sm">Period {periodIndex + 1}</span>
-                            <span className="text-sm">{formatDuration(period.duration)}</span>
+                            <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">{formatDuration(period.duration)}</span>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeletePeriod(session.id, period.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            {/* Min 1hr pill per period */}
+                            <button
+                              type="button"
+                              onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? {
+                                ...s,
+                                periods: s.periods.map(p => p.id === period.id ? { ...p, chargeMinimumHour: !p.chargeMinimumHour } : p)
+                              } : s))}
+                              className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                                period.chargeMinimumHour
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-transparent text-muted-foreground border-border'
+                              }`}
+                            >
+                              <Flag className="h-2.5 w-2.5" fill={period.chargeMinimumHour ? 'currentColor' : 'none'} />
+                              Min 1hr
+                            </button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeletePeriod(session.id, period.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 px-1">
-                          {renderPeriodInputs(session, period, false)}
+                        {/* Start / End in 2-column grid with larger inputs */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wide text-green-600">▶ Start</Label>
+                            <Input
+                              type="date"
+                              value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.dateValue : formatDateForInput(period.startTime)}
+                              onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'date', e.target.value, period)}
+                              onBlur={handlePeriodTimeBlur}
+                              className="h-10 text-base font-medium w-full"
+                            />
+                            <Input
+                              type="time"
+                              value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.timeValue : formatTimeForInput(period.startTime)}
+                              onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'time', e.target.value, period)}
+                              onBlur={handlePeriodTimeBlur}
+                              className="h-12 text-xl font-bold w-full text-center"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wide text-red-600">■ End</Label>
+                            <Input
+                              type="date"
+                              value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.dateValue : formatDateForInput(period.endTime)}
+                              onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'date', e.target.value, period)}
+                              onBlur={handlePeriodTimeBlur}
+                              className="h-10 text-base font-medium w-full"
+                            />
+                            <Input
+                              type="time"
+                              value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.timeValue : formatTimeForInput(period.endTime)}
+                              onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'time', e.target.value, period)}
+                              onBlur={handlePeriodTimeBlur}
+                              className="h-12 text-xl font-bold w-full text-center"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}

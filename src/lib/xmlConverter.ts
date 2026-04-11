@@ -107,6 +107,7 @@ export const exportToXML = (data: DatabaseExport): string => {
             xml += `startTime="${formatDate(period.startTime)}" `;
             xml += `endTime="${formatDate(period.endTime)}" `;
             xml += `duration="${escapeXML(period.duration)}" `;
+            if (period.chargeMinimumHour) xml += `chargeMinimumHour="true" `;
             xml += `/>\n`;
           });
           xml += '          </Periods>\n';
@@ -301,6 +302,7 @@ export const parseXMLString = (xmlText: string): DatabaseExport => {
                 startTime: new Date(periodNode.getAttribute('startTime') || ''),
                 endTime: new Date(periodNode.getAttribute('endTime') || ''),
                 duration: parseInt(periodNode.getAttribute('duration') || '0'),
+                chargeMinimumHour: periodNode.getAttribute('chargeMinimumHour') === 'true' || undefined,
               });
             });
           }

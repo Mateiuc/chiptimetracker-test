@@ -149,10 +149,21 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
     let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
     (task.sessions || []).forEach(session => {
-      const dur = session.periods.reduce((sum, p) => sum + p.duration, 0);
-      baseLabor += (dur / 3600) * hourlyRate;
-      // chargeMinimumHour: rounds up to 1 hour ONLY if flagged on this session AND under 60 min
-      if (session.chargeMinimumHour && dur < 3600) totalMinHourAdj += ((3600 - dur) / 3600) * hourlyRate;
+      // Period-level minimum hour — each flagged period charged independently
+      session.periods.forEach(period => {
+        const dur = period.duration;
+        if (period.chargeMinimumHour && dur < 3600) {
+          baseLabor += hourlyRate; // full hour
+        } else {
+          baseLabor += (dur / 3600) * hourlyRate;
+        }
+      });
+      // Legacy session-level fallback for old data without period flags
+      const sessionDur = session.periods.reduce((sum, p) => sum + p.duration, 0);
+      const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
+      if (!hasPeriodFlags && session.chargeMinimumHour && sessionDur < 3600) {
+        totalMinHourAdj += ((3600 - sessionDur) / 3600) * hourlyRate;
+      }
       if (session.isCloning && cloningRate > 0) totalCloning += cloningRate;
       if (session.isProgramming && programmingRate > 0) totalProgramming += programmingRate;
       if (session.isAddKey && addKeyRate > 0) totalAddKey += addKeyRate;
