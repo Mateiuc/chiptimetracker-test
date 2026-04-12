@@ -263,15 +263,6 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-7 w-7 ${session.chargeMinimumHour ? 'text-primary' : 'text-muted-foreground/40'}`}
-                  onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, chargeMinimumHour: !s.chargeMinimumHour } : s))}
-                  title="Charge minimum 1 hour for this session"
-                >
-                  <Flag className="h-3.5 w-3.5" fill={session.chargeMinimumHour ? 'currentColor' : 'none'} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
                   className={`h-7 w-7 ${session.isCloning ? 'text-primary' : 'text-muted-foreground/40'}`}
                   onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, isCloning: !s.isCloning } : s))}
                   title="Apply cloning rate to this session"
@@ -354,6 +345,23 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                         />
                       </div>
                       <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">{formatDuration(period.duration)}</span>
+                      {/* Min 1hr pill per period */}
+                      <button
+                        type="button"
+                        onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? {
+                          ...s,
+                          periods: s.periods.map(p => p.id === period.id ? { ...p, chargeMinimumHour: !p.chargeMinimumHour } : p)
+                        } : s))}
+                        className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${
+                          period.chargeMinimumHour
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-transparent text-muted-foreground border-border'
+                        }`}
+                        title="Charge minimum 1 hour for this period"
+                      >
+                        <Flag className="h-2.5 w-2.5" fill={period.chargeMinimumHour ? 'currentColor' : 'none'} />
+                        Min 1hr
+                      </button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={() => handleDeletePeriod(session.id, period.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

@@ -621,15 +621,6 @@ export const EditTaskDialog = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`h-6 w-6 ${session.chargeMinimumHour ? 'text-primary' : 'text-muted-foreground/40'}`}
-                        onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, chargeMinimumHour: !s.chargeMinimumHour } : s))}
-                        title="Charge minimum 1 hour for this session"
-                      >
-                        <Flag className="h-3 w-3" fill={session.chargeMinimumHour ? 'currentColor' : 'none'} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
                         className={`h-6 w-6 ${session.isCloning ? 'text-primary' : 'text-muted-foreground/40'}`}
                         onClick={() => setSessions(prev => prev.map(s => s.id === session.id ? { ...s, isCloning: !s.isCloning } : s))}
                         title="Apply cloning rate to this session"
