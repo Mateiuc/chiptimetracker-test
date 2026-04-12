@@ -155,6 +155,13 @@ export const exportToXML = (data: DatabaseExport): string => {
   // Settings
   xml += '  <Settings ';
   xml += `defaultHourlyRate="${escapeXML(data.settings.defaultHourlyRate)}" `;
+  if (data.settings.defaultCloningRate != null) xml += `defaultCloningRate="${escapeXML(data.settings.defaultCloningRate)}" `;
+  if (data.settings.defaultProgrammingRate != null) xml += `defaultProgrammingRate="${escapeXML(data.settings.defaultProgrammingRate)}" `;
+  if (data.settings.defaultAddKeyRate != null) xml += `defaultAddKeyRate="${escapeXML(data.settings.defaultAddKeyRate)}" `;
+  if (data.settings.defaultAllKeysLostRate != null) xml += `defaultAllKeysLostRate="${escapeXML(data.settings.defaultAllKeysLostRate)}" `;
+  if (data.settings.googleApiKey) xml += `googleApiKey="${escapeXML(data.settings.googleApiKey)}" `;
+  if (data.settings.paymentLink) xml += `paymentLink="${escapeXML(data.settings.paymentLink)}" `;
+  if (data.settings.paymentLabel) xml += `paymentLabel="${escapeXML(data.settings.paymentLabel)}" `;
   xml += '/>\n';
 
   xml += '</AutoTimeData>';
@@ -349,6 +356,13 @@ export const parseXMLString = (xmlText: string): DatabaseExport => {
   if (settingsNode) {
     data.settings = {
       defaultHourlyRate: parseFloat(settingsNode.getAttribute('defaultHourlyRate') || '75'),
+      ...(settingsNode.getAttribute('defaultCloningRate') ? { defaultCloningRate: parseFloat(settingsNode.getAttribute('defaultCloningRate')!) } : {}),
+      ...(settingsNode.getAttribute('defaultProgrammingRate') ? { defaultProgrammingRate: parseFloat(settingsNode.getAttribute('defaultProgrammingRate')!) } : {}),
+      ...(settingsNode.getAttribute('defaultAddKeyRate') ? { defaultAddKeyRate: parseFloat(settingsNode.getAttribute('defaultAddKeyRate')!) } : {}),
+      ...(settingsNode.getAttribute('defaultAllKeysLostRate') ? { defaultAllKeysLostRate: parseFloat(settingsNode.getAttribute('defaultAllKeysLostRate')!) } : {}),
+      ...(settingsNode.getAttribute('googleApiKey') ? { googleApiKey: settingsNode.getAttribute('googleApiKey')! } : {}),
+      ...(settingsNode.getAttribute('paymentLink') ? { paymentLink: settingsNode.getAttribute('paymentLink')! } : {}),
+      ...(settingsNode.getAttribute('paymentLabel') ? { paymentLabel: settingsNode.getAttribute('paymentLabel')! } : {}),
     };
   }
 
