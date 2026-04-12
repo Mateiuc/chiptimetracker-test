@@ -1486,10 +1486,10 @@ const DesktopDashboard = () => {
                           {client.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>}
                           {client.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.phone}</span>}
                           <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5" />{formatCurrency(rate)}/hr</span>
-                          {(client.cloningRate || settings.defaultCloningRate) && <span className="text-xs">{formatCurrency(client.cloningRate || settings.defaultCloningRate || 0)}/clone</span>}
-                          {(client.programmingRate || settings.defaultProgrammingRate) && <span className="text-xs">{formatCurrency(client.programmingRate || settings.defaultProgrammingRate || 0)}/prog</span>}
-                          {(client.addKeyRate || settings.defaultAddKeyRate) && <span className="text-xs">{formatCurrency(client.addKeyRate || settings.defaultAddKeyRate || 0)}/add-key</span>}
-                          {(client.allKeysLostRate || settings.defaultAllKeysLostRate) && <span className="text-xs">{formatCurrency(client.allKeysLostRate || settings.defaultAllKeysLostRate || 0)}/AKL</span>}
+                          <span className="text-xs">{formatCurrency(client.cloningRate ?? settings.defaultCloningRate ?? 0)}/clone</span>
+                          <span className="text-xs">{formatCurrency(client.programmingRate ?? settings.defaultProgrammingRate ?? 0)}/prog</span>
+                          <span className="text-xs">{formatCurrency(client.addKeyRate ?? settings.defaultAddKeyRate ?? 0)}/add-key</span>
+                          <span className="text-xs">{formatCurrency(client.allKeysLostRate ?? settings.defaultAllKeysLostRate ?? 0)}/AKL</span>
                         </div>
                         {(client.address || client.city || client.state) && (
                           <p className="text-xs text-muted-foreground mt-1">
