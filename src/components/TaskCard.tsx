@@ -1291,11 +1291,6 @@ export const TaskCard = ({
   const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
   const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
   const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
-  const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate;
-  const cloningRate = client?.cloningRate || (settings as any).defaultCloningRate || 0;
-  const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
-  const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
-  const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
   let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
   let minHourCount = 0, cloningCount = 0, programmingCount = 0, addKeyCount = 0, allKeysLostCount = 0;
   (task.sessions || []).forEach(session => {
