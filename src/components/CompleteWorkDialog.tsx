@@ -9,20 +9,23 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Trash2, Flag, Copy, Cpu, Key, KeyRound } from 'lucide-react';
-import { Part } from '@/types';
+import { Part, WorkPeriod } from '@/types';
+import { formatDuration } from '@/lib/formatTime';
 
 interface CompleteWorkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onComplete: (description: string, parts: Part[], needsFollowUp: boolean, chargeMinimumHour: boolean, isCloning: boolean, isProgramming: boolean, isAddKey: boolean, isAllKeysLost: boolean) => void;
+  onComplete: (description: string, parts: Part[], needsFollowUp: boolean, periodMinHourFlags: boolean[], isCloning: boolean, isProgramming: boolean, isAddKey: boolean, isAllKeysLost: boolean) => void;
   vehicleLabel?: string;
+  sessionPeriods?: WorkPeriod[]; // periods of the active session
 }
 
-export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabel }: CompleteWorkDialogProps) => {
+export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabel, sessionPeriods = [] }: CompleteWorkDialogProps) => {
   const [description, setDescription] = useState('');
   const [parts, setParts] = useState<Part[]>([]);
   const [needsFollowUp, setNeedsFollowUp] = useState(false);
-  const [chargeMinimumHour, setChargeMinimumHour] = useState(false);
+  // Per-period Min 1hr flags — one boolean per period
+  const [periodMinHourFlags, setPeriodMinHourFlags] = useState<boolean[]>([]);
   const [isCloning, setIsCloning] = useState(false);
   const [isProgramming, setIsProgramming] = useState(false);
   const [isAddKey, setIsAddKey] = useState(false);
@@ -67,12 +70,12 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
       } as Part);
     }
     
-    onComplete(description, finalParts, needsFollowUp, chargeMinimumHour, isCloning, isProgramming, isAddKey, isAllKeysLost);
+    onComplete(description, finalParts, needsFollowUp, periodMinHourFlags, isCloning, isProgramming, isAddKey, isAllKeysLost);
     setDescription('');
     setParts([]);
     setNewPart({ name: '', quantity: '', price: '', description: '', providedByClient: false });
     setNeedsFollowUp(false);
-    setChargeMinimumHour(false);
+    setPeriodMinHourFlags([]);
     setIsCloning(false);
     setIsProgramming(false);
     setIsAddKey(false);
@@ -131,13 +134,42 @@ export const CompleteWorkDialog = ({ open, onOpenChange, onComplete, vehicleLabe
 
               <div className="space-y-3">
                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Billing Options</Label>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Flag className="h-4 w-4 text-primary" />
-                    <Label className="text-sm">Min 1 Hour</Label>
+                {/* Min 1hr: single toggle if 1 period, per-period list if 2+ */}
+                {sessionPeriods.length <= 1 ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Flag className="h-4 w-4 text-primary" />
+                      <Label className="text-sm">Min 1 Hour</Label>
+                    </div>
+                    <Switch
+                      checked={periodMinHourFlags[0] || false}
+                      onCheckedChange={v => setPeriodMinHourFlags([v])}
+                    />
                   </div>
-                  <Switch checked={chargeMinimumHour} onCheckedChange={setChargeMinimumHour} />
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Flag className="h-4 w-4 text-primary" />
+                      <Label className="text-sm">Min 1 Hour per period</Label>
+                    </div>
+                    {sessionPeriods.map((period, i) => (
+                      <div key={period.id} className="flex items-center justify-between bg-background/60 rounded-lg px-3 py-2 border border-border/40">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-muted-foreground">Period {i + 1}</span>
+                          <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{formatDuration(period.duration)}</span>
+                        </div>
+                        <Switch
+                          checked={periodMinHourFlags[i] || false}
+                          onCheckedChange={v => {
+                            const updated = [...periodMinHourFlags];
+                            updated[i] = v;
+                            setPeriodMinHourFlags(updated);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Copy className="h-4 w-4 text-primary" />

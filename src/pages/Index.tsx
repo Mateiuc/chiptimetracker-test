@@ -310,7 +310,7 @@ const Index = () => {
     setShowCompleteWork(true);
   };
 
-  const handleCompleteWork = (description: string, parts: Part[], needsFollowUp: boolean, chargeMinimumHour: boolean = false, isCloning: boolean = false, isProgramming: boolean = false, isAddKey: boolean = false, isAllKeysLost: boolean = false) => {
+  const handleCompleteWork = (description: string, parts: Part[], needsFollowUp: boolean, periodMinHourFlags: boolean[] = [], isCloning: boolean = false, isProgramming: boolean = false, isAddKey: boolean = false, isAllKeysLost: boolean = false) => {
     const activeTask = stoppingTaskId ? tasks.find(t => t.id === stoppingTaskId) : tasks.find(t => t.status === 'in-progress' || t.status === 'paused');
     if (!activeTask) return;
 
@@ -324,7 +324,13 @@ const Index = () => {
       targetSession.description = description;
       targetSession.parts = parts;
       targetSession.completedAt = new Date();
-      targetSession.chargeMinimumHour = chargeMinimumHour;
+      // Apply per-period chargeMinimumHour flags
+      targetSession.periods = targetSession.periods.map((p, i) => ({
+        ...p,
+        chargeMinimumHour: periodMinHourFlags[i] || false,
+      }));
+      // Legacy session-level flag: true if any period is flagged
+      targetSession.chargeMinimumHour = periodMinHourFlags.some(Boolean);
       targetSession.isCloning = isCloning;
       targetSession.isProgramming = isProgramming;
       targetSession.isAddKey = isAddKey;
@@ -908,6 +914,14 @@ const Index = () => {
           const v = vehicles.find(vh => vh.id === t.vehicleId);
           if (!v) return undefined;
           return [v.year, v.make, v.model].filter(Boolean).join(' ');
+        })()}
+        sessionPeriods={(() => {
+          const t = stoppingTaskId ? tasks.find(tk => tk.id === stoppingTaskId) : tasks.find(tk => tk.status === 'in-progress' || tk.status === 'paused');
+          if (!t) return [];
+          const session = t.activeSessionId
+            ? t.sessions?.find(s => s.id === t.activeSessionId)
+            : t.sessions?.find(s => s.periods && s.periods.length > 0);
+          return session?.periods || [];
         })()}
       />
 
