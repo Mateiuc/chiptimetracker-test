@@ -10,7 +10,15 @@ export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(amount);
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.ceil(amount));
+};
+
+// Cost for a single period: round up seconds to minutes, then to dollars
+export const calcPeriodCost = (seconds: number, hourlyRate: number): number => {
+  const minutes = Math.ceil(seconds / 60); // round up to next minute
+  return Math.ceil((minutes / 60) * hourlyRate); // round up to next dollar
 };
 
 export const formatTime = (date: Date | string): string => {

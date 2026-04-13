@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ChevronDown, ChevronUp, FileText, DollarSign, CheckCircle2, Play, MoreVertical, Edit, Wrench, Pause, Square, Trash, Camera as CameraIcon, Eye } from 'lucide-react';
-import { formatDuration, formatCurrency, formatTime } from '@/lib/formatTime';
+import { formatDuration, formatCurrency, formatTime, calcPeriodCost } from '@/lib/formatTime';
 import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -1291,23 +1291,26 @@ export const TaskCard = ({
   const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
   const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
   const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
+  const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate;
+  const cloningRate = client?.cloningRate || (settings as any).defaultCloningRate || 0;
+  const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
+  const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
+  const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
   let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
   let minHourCount = 0, cloningCount = 0, programmingCount = 0, addKeyCount = 0, allKeysLostCount = 0;
   (task.sessions || []).forEach(session => {
-    // Period-level minimum hour — each flagged period charged independently
     session.periods.forEach(period => {
       if (period.chargeMinimumHour && period.duration < 3600) {
-        baseLabor += hourlyRate; // full hour
+        baseLabor += Math.ceil(hourlyRate);
         minHourCount++;
       } else {
-        baseLabor += (period.duration / 3600) * hourlyRate;
+        baseLabor += calcPeriodCost(period.duration, hourlyRate);
       }
     });
-    // Legacy session-level fallback for old data without period flags
     const sessionDur = session.periods.reduce((sum, p) => sum + p.duration, 0);
     const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
     if (!hasPeriodFlags && session.chargeMinimumHour && sessionDur < 3600) {
-      totalMinHourAdj += ((3600 - sessionDur) / 3600) * hourlyRate;
+      totalMinHourAdj += Math.ceil(((3600 - sessionDur) / 3600) * hourlyRate);
       minHourCount++;
     }
     if (session.isCloning && cloningRate > 0) { totalCloning += cloningRate; cloningCount++; }
@@ -1321,7 +1324,8 @@ export const TaskCard = ({
     return total + (session.parts || []).reduce((sum, part) => sum + (part.providedByClient ? 0 : part.price * part.quantity), 0);
   }, 0);
   const laborCost = task.importedSalary != null ? task.importedSalary : calculatedLabor;
-  const totalCost = laborCost + partsCost;
+  // billedAmount locks the cost at billing time; otherwise calculate with round-up
+  const totalCost = task.billedAmount != null ? task.billedAmount : Math.ceil(laborCost + partsCost);
   return <Card className={`overflow-hidden transition-all hover:shadow-md ${colorScheme.card} border ${colorScheme.border}`}>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="p-3 py-0">

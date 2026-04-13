@@ -19,7 +19,7 @@ import { useClients, useVehicles, useTasks, useSettings, useCloudSync, setCloudP
 import { capacitorStorage } from '@/lib/capacitorStorage';
 import { Task, Client, Vehicle, WorkSession } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
-import { formatDuration, formatCurrency, formatTime } from '@/lib/formatTime';
+import { formatDuration, formatCurrency, formatTime, calcPeriodCost } from '@/lib/formatTime';
 import { photoStorageService } from '@/services/photoStorageService';
 import { syncPortalToCloud, generateAccessCode, calculateClientCosts, encodeClientData, generatePortalHtmlFile, PORTAL_BASE_URL } from '@/lib/clientPortalUtils';
 import { parseWorkHistoryXls } from '@/lib/xlsImporter';
@@ -625,12 +625,38 @@ const DesktopDashboard = () => {
 
   // --- Handlers ---
   const handleMarkBilled = (taskId: string) => {
-    updateTask(taskId, { status: 'billed' });
-    toast({ title: 'Task Marked as Billed' });
     const task = tasks.find(t => t.id === taskId);
     const client = task ? clients.find(c => c.id === task.clientId) : null;
+    // Lock the billed amount at billing time
+    let billedAmount: number | undefined;
+    if (task && task.billedAmount == null && task.importedSalary == null) {
+      const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate || 100;
+      const cloningRate = client?.cloningRate || (settings as any).defaultCloningRate || 0;
+      const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
+      const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
+      const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
+      let labor = 0;
+      (task.sessions || []).forEach(session => {
+        session.periods.forEach(period => {
+          if (period.chargeMinimumHour && period.duration < 3600) labor += Math.ceil(hourlyRate);
+          else labor += calcPeriodCost(period.duration, hourlyRate);
+        });
+        const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
+        const dur = session.periods.reduce((s, p) => s + p.duration, 0);
+        if (!hasPeriodFlags && session.chargeMinimumHour && dur < 3600) labor += Math.ceil(((3600 - dur) / 3600) * hourlyRate);
+        if (session.isCloning) labor += cloningRate;
+        if (session.isProgramming) labor += programmingRate;
+        if (session.isAddKey) labor += addKeyRate;
+        if (session.isAllKeysLost) labor += allKeysLostRate;
+      });
+      const parts = (task.sessions || []).reduce((s, sess) =>
+        s + (sess.parts || []).reduce((p2, p) => p2 + (p.providedByClient ? 0 : p.price * p.quantity), 0), 0);
+      billedAmount = Math.ceil(labor + parts);
+    }
+    updateTask(taskId, { status: 'billed', ...(billedAmount != null ? { billedAmount } : {}) });
+    toast({ title: 'Task Marked as Billed' });
     if (client) {
-      const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: 'billed' as const } : t);
+      const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: 'billed' as const, ...(billedAmount != null ? { billedAmount } : {}) } : t);
       syncPortalToCloud(client, vehicles, updatedTasks, settings.defaultHourlyRate, settings.defaultCloningRate, settings.defaultProgrammingRate, settings.defaultAddKeyRate, settings.defaultAllKeysLostRate, settings.paymentLink, settings.paymentLabel, settings.paymentMethods, client.portalLogoUrl || settings.portalLogoUrl, client.portalBgColor || settings.portalBgColor, client.portalBusinessName || settings.portalBusinessName, client.portalBgImageUrl || settings.portalBgImageUrl)
         .then(result => { if (!client.portalId) updateClient(client.id, { portalId: result.portalId, accessCode: result.accessCode }); })
         .catch(err => console.warn('[CloudSync] Portal sync failed:', err));

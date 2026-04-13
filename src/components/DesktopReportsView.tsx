@@ -13,7 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Task, Client, Vehicle, Settings } from '@/types';
-import { formatDuration, formatCurrency } from '@/lib/formatTime';
+import { formatDuration, formatCurrency, calcPeriodCost } from '@/lib/formatTime';
 
 const CHART_COLORS = [
   '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b',
@@ -139,7 +139,7 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
   };
 
   const getTaskCost = (task: Task) => {
-    // importedSalary = already the final revenue, return exactly as stored
+    if (task.billedAmount != null) return task.billedAmount;
     if (task.importedSalary != null) return task.importedSalary;
     const client = clients.find(c => c.id === task.clientId);
     const hourlyRate = client?.hourlyRate || settings.defaultHourlyRate;
@@ -147,32 +147,28 @@ export const DesktopReportsView = ({ tasks, clients, vehicles, settings }: Deskt
     const programmingRate = client?.programmingRate || (settings as any).defaultProgrammingRate || 0;
     const addKeyRate = client?.addKeyRate || (settings as any).defaultAddKeyRate || 0;
     const allKeysLostRate = client?.allKeysLostRate || (settings as any).defaultAllKeysLostRate || 0;
-    let baseLabor = 0, totalMinHourAdj = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
+    let labor = 0, totalCloning = 0, totalProgramming = 0, totalAddKey = 0, totalAllKeysLost = 0;
     (task.sessions || []).forEach(session => {
-      // Period-level minimum hour — each flagged period charged independently
       session.periods.forEach(period => {
-        const dur = period.duration;
-        if (period.chargeMinimumHour && dur < 3600) {
-          baseLabor += hourlyRate; // full hour
+        if (period.chargeMinimumHour && period.duration < 3600) {
+          labor += Math.ceil(hourlyRate);
         } else {
-          baseLabor += (dur / 3600) * hourlyRate;
+          labor += calcPeriodCost(period.duration, hourlyRate);
         }
       });
-      // Legacy session-level fallback for old data without period flags
-      const sessionDur = session.periods.reduce((sum, p) => sum + p.duration, 0);
       const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
-      if (!hasPeriodFlags && session.chargeMinimumHour && sessionDur < 3600) {
-        totalMinHourAdj += ((3600 - sessionDur) / 3600) * hourlyRate;
+      if (!hasPeriodFlags && session.chargeMinimumHour) {
+        const dur = session.periods.reduce((s, p) => s + p.duration, 0);
+        if (dur < 3600) labor += Math.ceil(((3600 - dur) / 3600) * hourlyRate);
       }
       if (session.isCloning && cloningRate > 0) totalCloning += cloningRate;
       if (session.isProgramming && programmingRate > 0) totalProgramming += programmingRate;
       if (session.isAddKey && addKeyRate > 0) totalAddKey += addKeyRate;
       if (session.isAllKeysLost && allKeysLostRate > 0) totalAllKeysLost += allKeysLostRate;
     });
-    const laborCost = baseLabor + totalMinHourAdj + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost;
     const partsCost = (task.sessions || []).reduce((total, session) =>
       total + (session.parts || []).reduce((sum, part) => sum + (part.providedByClient ? 0 : part.price * part.quantity), 0), 0);
-    return laborCost + partsCost;
+    return Math.ceil(labor + totalCloning + totalProgramming + totalAddKey + totalAllKeysLost + partsCost);
   };
 
   const getTaskSeconds = (task: Task) =>

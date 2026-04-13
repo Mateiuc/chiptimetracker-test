@@ -1,4 +1,5 @@
 import { Client, Vehicle, Task, TaskStatus, Part, PaymentMethod } from '@/types';
+import { calcPeriodCost } from '@/lib/formatTime';
 
 export const PORTAL_BASE_URL = 'https://chiptimetracker-test.lovable.app';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,28 +172,27 @@ export function calculateClientCosts(
         let sessionAddKeyCost = 0;
         let sessionAllKeysLostCost = 0;
         let sessionPartsCost = 0;
-        if (task.importedSalary != null) {
-          // importedSalary = final revenue for the entire task, no modification
-          // Apply to first session only, zero for the rest, never add parts
+        if (task.billedAmount != null) {
+          laborCost = importedSalaryApplied ? 0 : task.billedAmount;
+          importedSalaryApplied = true;
+        } else if (task.importedSalary != null) {
           laborCost = importedSalaryApplied ? 0 : task.importedSalary;
           importedSalaryApplied = true;
         } else {
-          // Period-level minimum hour — each flagged period charged independently
           const hasPeriodFlags = session.periods.some(p => p.chargeMinimumHour);
           const baseLaborCost = session.periods.reduce((sum, period) => {
             if (period.chargeMinimumHour && period.duration < 3600) {
-              return sum + hourlyRate; // full hour
+              return sum + Math.ceil(hourlyRate);
             }
-            return sum + (period.duration / 3600) * hourlyRate;
+            return sum + calcPeriodCost(period.duration, hourlyRate);
           }, 0);
-          // Legacy session-level fallback for old data without period flags
           minHourAdj = (!hasPeriodFlags && session.chargeMinimumHour && duration < 3600)
-            ? ((3600 - duration) / 3600) * hourlyRate : 0;
+            ? Math.ceil(((3600 - duration) / 3600) * hourlyRate) : 0;
           sessionCloningCost = (session.isCloning && cloningRate > 0) ? cloningRate : 0;
           sessionProgrammingCost = (session.isProgramming && programmingRate > 0) ? programmingRate : 0;
           sessionAddKeyCost = (session.isAddKey && addKeyRate > 0) ? addKeyRate : 0;
           sessionAllKeysLostCost = (session.isAllKeysLost && allKeysLostRate > 0) ? allKeysLostRate : 0;
-          laborCost = baseLaborCost + minHourAdj + sessionCloningCost + sessionProgrammingCost + sessionAddKeyCost + sessionAllKeysLostCost;
+          laborCost = Math.ceil(baseLaborCost + minHourAdj + sessionCloningCost + sessionProgrammingCost + sessionAddKeyCost + sessionAllKeysLostCost);
           sessionPartsCost = (session.parts || []).reduce((sum, p) => sum + (p.providedByClient ? 0 : p.price * p.quantity), 0);
         }
         
