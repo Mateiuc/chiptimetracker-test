@@ -15,9 +15,9 @@ export const formatCurrency = (amount: number): string => {
   }).format(Math.ceil(amount));
 };
 
-// Cost for a single period: round up seconds to minutes, then to dollars
+// Cost for a single period: round to nearest minute, then round up to dollar
 export const calcPeriodCost = (seconds: number, hourlyRate: number): number => {
-  const minutes = Math.ceil(seconds / 60); // round up to next minute
+  const minutes = Math.round(seconds / 60); // round to nearest minute
   return Math.ceil((minutes / 60) * hourlyRate); // round up to next dollar
 };
 
