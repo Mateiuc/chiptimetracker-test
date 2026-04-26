@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Upload error:', error)
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ error: 'Storage error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
 
     if (signErr) {
       console.error('Sign error:', signErr)
-      return new Response(JSON.stringify({ error: signErr.message }), {
+      return new Response(JSON.stringify({ error: 'Storage error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
