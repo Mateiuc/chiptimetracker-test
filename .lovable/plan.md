@@ -1,42 +1,26 @@
-## Goal
-Fix two security findings:
-1. Edge functions leak raw DB/storage error messages
-2. `session-photos` bucket lacks explicit INSERT/UPDATE/DELETE RLS policies
+## Finding Analysis
 
-## Changes
+The scanner flagged `workspace_invites_missing_insert_user_check` as a warning, but its own description ends with: *"invite-based onboarding likely bypasses RLS entirely (e.g., via a service role), which is acceptable. No actionable RLS finding here."*
 
-### 1. Sanitize edge function error responses
-Replace `error.message` with generic strings in 500 responses. Keep `console.error` with full detail server-side.
+### Verification
 
-- `supabase/functions/get-portal/index.ts` — `'Database error'`
-- `supabase/functions/sync-portal/index.ts` — `'Database error'`
-- `supabase/functions/upload-photo/index.ts` — `'Storage error'` (both upload + sign branches)
-- `supabase/functions/upload-diagnostic/index.ts` — `'Storage error'`
-- `supabase/functions/sign-photo-urls/index.ts` — `'Storage error'`
-- `supabase/functions/sign-diagnostic-url/index.ts` — `'Storage error'`
+The invite redemption flow in this project uses the `redeem_workspace_invite(_code text)` SECURITY DEFINER PostgreSQL function, which:
 
-### 2. Add session-photos write/delete RLS policies
-New migration adding workspace-scoped policies on `storage.objects` for `bucket_id = 'session-photos'`, mirroring the existing SELECT policy pattern (path prefix = workspace id):
+1. Requires `auth.uid()` (rejects anonymous calls)
+2. Looks up the invite by code
+3. Rejects if already used (`used_at IS NOT NULL`)
+4. Rejects if expired (`expires_at < now()`)
+5. Inserts the caller into `workspace_members` with the role stored on the invite
+6. Marks the invite as used (atomic single-use)
 
-```sql
-CREATE POLICY "Workspace members can upload session photos"
-ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (
-  bucket_id = 'session-photos'
-  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
-);
+This is the recommended pattern — exactly equivalent to a service-role flow but safer (no service key exposure, validation enforced in SQL). RLS on `workspace_members` correctly only allows owner self-insert; invitees join through the SECURITY DEFINER function, not via a direct INSERT.
 
-CREATE POLICY "Workspace members can update session photos"
-ON storage.objects FOR UPDATE TO authenticated
-USING (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()))
-WITH CHECK (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()));
+The existing `workspace_invites` SELECT policy correctly restricts reads to owners/admins only, so regular members cannot enumerate codes.
 
-CREATE POLICY "Workspace members can delete session photos"
-ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()));
-```
+### Recommendation
 
-Service-role uploads via `upload-photo` edge function continue to work (they bypass RLS). These policies provide defense-in-depth so direct client writes are also constrained correctly.
+Mark this finding as **fixed/not-applicable** with an explanation that the redemption path uses a properly validated SECURITY DEFINER function. No code or schema changes are needed.
 
-### 3. Mark findings fixed
-Mark `edge_fn_raw_errors` and `session_photos_missing_insert_update_delete` as fixed.
+### Action
+
+Call `security--manage_security_finding` with `operation: "ignore"` for `workspace_invites_missing_insert_user_check`, citing the existing `redeem_workspace_invite` function as the secure redemption path.
