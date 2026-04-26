@@ -40,6 +40,25 @@ Deno.serve(async (req) => {
       })
     }
 
+    // SECURITY: Resolve caller's workspace and prefix the storage path so
+    // callers cannot overwrite diagnostic PDFs in other workspaces.
+    const { data: wsId, error: wsErr } = await supabase.rpc(
+      'user_primary_workspace',
+      { _user_id: userData.user.id }
+    )
+    if (wsErr || !wsId) {
+      return new Response(JSON.stringify({ error: 'No workspace for user' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(String(pathPrefix))) {
+      return new Response(JSON.stringify({ error: 'Invalid id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Decode base64 to binary
     const binaryString = atob(base64)
     const bytes = new Uint8Array(binaryString.length)
@@ -48,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     const safeName = (fileName || 'diagnostic.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')
-    const filePath = `${pathPrefix}/${safeName}`
+    const filePath = `${wsId}/${pathPrefix}/${safeName}`
 
     const { error } = await supabase.storage
       .from('diagnostic-pdfs')
