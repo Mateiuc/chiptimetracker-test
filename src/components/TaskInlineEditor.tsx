@@ -321,13 +321,13 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                           value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.dateValue : formatDateForInput(period.startTime)}
                           onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'date', e.target.value, period)}
                           onBlur={handlePeriodTimeBlur}
-                          className="h-8 text-xs font-medium flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                          className="h-8 text-xs font-medium flex-1 min-w-0"
                         />
                         <Input type="time"
                           value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.timeValue : formatTimeForInput(period.startTime)}
                           onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'time', e.target.value, period)}
                           onBlur={handlePeriodTimeBlur}
-                          className="h-8 text-xs w-24 font-medium shrink-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                          className="h-8 text-xs w-24 font-medium shrink-0"
                         />
                         <span className="text-muted-foreground text-xs">→</span>
                         <span className="text-[10px] text-red-600 shrink-0">End</span>
@@ -335,13 +335,13 @@ export const TaskInlineEditor = ({ task, onSave, onCancel, onDelete }: TaskInlin
                           value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.dateValue : formatDateForInput(period.endTime)}
                           onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'date', e.target.value, period)}
                           onBlur={handlePeriodTimeBlur}
-                          className="h-8 text-xs font-medium flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                          className="h-8 text-xs font-medium flex-1 min-w-0"
                         />
                         <Input type="time"
                           value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.timeValue : formatTimeForInput(period.endTime)}
                           onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'time', e.target.value, period)}
                           onBlur={handlePeriodTimeBlur}
-                          className="h-8 text-xs w-24 font-medium shrink-0 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+                          className="h-8 text-xs w-24 font-medium shrink-0"
                         />
                       </div>
                       <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">{formatDuration(period.duration)}</span>
