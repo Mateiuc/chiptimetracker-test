@@ -46,6 +46,16 @@ export const appSyncService = {
         const { accessCode: _omit, ...rest } = c || {};
         return rest;
       }),
+      // SECURITY: Strip third-party API keys (Gemini/Grok/OCR Space) before
+      // syncing. These are device-local OCR credentials and must never be
+      // synced to the cloud or shared across workspace members.
+      settings: (() => {
+        const s: any = { ...(data.settings || {}) };
+        delete s.googleApiKey;
+        delete s.grokApiKey;
+        delete s.ocrSpaceApiKey;
+        return s;
+      })(),
     };
 
     const { error } = await supabase

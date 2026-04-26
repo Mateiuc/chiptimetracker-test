@@ -39,6 +39,29 @@ Deno.serve(async (req) => {
       })
     }
 
+    // SECURITY: Resolve caller's workspace server-side and prefix the storage
+    // path with it, so callers cannot overwrite files in workspaces they don't
+    // belong to (the service-role key bypasses storage RLS).
+    const { data: wsId, error: wsErr } = await supabase.rpc(
+      'user_primary_workspace',
+      { _user_id: userData.user.id }
+    )
+    if (wsErr || !wsId) {
+      return new Response(JSON.stringify({ error: 'No workspace for user' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Validate caller-supplied IDs to keep paths sane.
+    const safeId = (s: string) => /^[a-zA-Z0-9._-]+$/.test(s)
+    if (!safeId(taskId) || !safeId(photoId)) {
+      return new Response(JSON.stringify({ error: 'Invalid taskId or photoId' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Decode base64 to binary
     const binaryString = atob(base64)
     const bytes = new Uint8Array(binaryString.length)
@@ -46,7 +69,7 @@ Deno.serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i)
     }
 
-    const filePath = `${taskId}/${photoId}.jpg`
+    const filePath = `${wsId}/${taskId}/${photoId}.jpg`
 
     const { error } = await supabase.storage
       .from('session-photos')
