@@ -1,8 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Vehicle, Task, Settings } from '@/types';
 
-const FIXED_SYNC_ID = 'chiptime-default';
 const LOCAL_UPDATED_AT_KEY = 'app_sync_local_updated_at';
+const LOCAL_WORKSPACE_KEY = 'app_sync_workspace_id';
 
 export interface SyncData {
   clients: Client[];
@@ -12,8 +12,13 @@ export interface SyncData {
 }
 
 export const appSyncService = {
-  getSyncId(): string {
-    return FIXED_SYNC_ID;
+  getWorkspaceId(): string | null {
+    return localStorage.getItem(LOCAL_WORKSPACE_KEY);
+  },
+
+  setWorkspaceId(id: string | null) {
+    if (id) localStorage.setItem(LOCAL_WORKSPACE_KEY, id);
+    else localStorage.removeItem(LOCAL_WORKSPACE_KEY);
   },
 
   getLocalUpdatedAt(): string | null {
@@ -25,16 +30,21 @@ export const appSyncService = {
   },
 
   async pushToCloud(data: SyncData): Promise<void> {
-    const syncId = this.getSyncId();
+    const workspaceId = this.getWorkspaceId();
+    if (!workspaceId) {
+      console.warn('[AppSync] Skipped push — no workspace');
+      return;
+    }
     const now = new Date().toISOString();
 
     const { error } = await supabase
       .from('app_sync')
       .upsert({
-        sync_id: syncId,
+        sync_id: workspaceId,
+        workspace_id: workspaceId,
         data: data as any,
         updated_at: now,
-      }, { onConflict: 'sync_id' });
+      }, { onConflict: 'workspace_id' });
 
     if (error) {
       console.error('[AppSync] Push failed:', error);
@@ -46,12 +56,13 @@ export const appSyncService = {
   },
 
   async pullFromCloud(): Promise<{ data: SyncData; updatedAt: string } | null> {
-    const syncId = this.getSyncId();
+    const workspaceId = this.getWorkspaceId();
+    if (!workspaceId) return null;
 
     const { data, error } = await supabase
       .from('app_sync')
       .select('data, updated_at')
-      .eq('sync_id', syncId)
+      .eq('workspace_id', workspaceId)
       .maybeSingle();
 
     if (error) {
@@ -60,7 +71,7 @@ export const appSyncService = {
     }
 
     if (!data) {
-      console.log('[AppSync] No remote data found for sync_id:', syncId);
+      console.log('[AppSync] No remote data found for workspace:', workspaceId);
       return null;
     }
 
@@ -70,12 +81,13 @@ export const appSyncService = {
   },
 
   async getRemoteUpdatedAt(): Promise<string | null> {
-    const syncId = this.getSyncId();
+    const workspaceId = this.getWorkspaceId();
+    if (!workspaceId) return null;
 
     const { data, error } = await supabase
       .from('app_sync')
       .select('updated_at')
-      .eq('sync_id', syncId)
+      .eq('workspace_id', workspaceId)
       .maybeSingle();
 
     if (error) {
