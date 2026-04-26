@@ -115,19 +115,14 @@ const Auth = () => {
     }
     setBusy(true);
     try {
-      const { data: ws, error: e1 } = await supabase
-        .from('workspaces')
-        .insert({ name: workspaceName.trim(), owner_user_id: session.user.id })
-        .select('id')
-        .single();
-      if (e1) throw e1;
-      const { error: e2 } = await supabase
-        .from('workspace_members')
-        .insert({ workspace_id: ws.id, user_id: session.user.id, role: 'owner' });
-      if (e2) throw e2;
+      const { error } = await supabase.rpc('create_workspace', {
+        _name: workspaceName.trim(),
+      });
+      if (error) throw error;
       toast({ title: 'Workspace created' });
       await refreshWorkspace();
     } catch (err: any) {
+      console.error('[Auth] create_workspace failed', err);
       toast({ title: 'Could not create workspace', description: err.message, variant: 'destructive' });
     } finally {
       setBusy(false);
