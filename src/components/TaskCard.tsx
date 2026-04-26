@@ -1204,13 +1204,13 @@ export const TaskCard = ({
 
         // Background cloud upload (fire-and-forget)
         photoStorageService.uploadPhotoToCloud(photo.base64String!, task.id, photoId)
-          .then(cloudUrl => {
+          .then(({ url: cloudUrl, path: cloudPath }) => {
             const taskWithCloudUrl = {
               ...updatedTask,
               sessions: updatedTask.sessions.map(session =>
                 session.id === targetSessionId
                   ? { ...session, photos: session.photos?.map(p =>
-                      p.id === photoId ? { ...p, cloudUrl } : p
+                      p.id === photoId ? { ...p, cloudUrl, cloudPath } : p
                     )}
                   : session
               ),

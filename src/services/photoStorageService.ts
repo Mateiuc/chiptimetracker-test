@@ -1,6 +1,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { indexedDB } from '@/lib/indexedDB';
+import { supabase } from '@/integrations/supabase/client';
 
 const PHOTOS_DIR = 'task-photos';
 
@@ -304,29 +305,40 @@ class PhotoStorageService {
   /**
    * Upload a photo to cloud storage
    */
-  async uploadPhotoToCloud(base64: string, taskId: string, photoId: string): Promise<string> {
+  async uploadPhotoToCloud(
+    base64: string,
+    taskId: string,
+    photoId: string
+  ): Promise<{ url: string; path: string }> {
     const compressed = await this.compressImage(base64);
-    
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const resp = await fetch(
-      `https://${projectId}.supabase.co/functions/v1/upload-photo`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ base64: compressed, taskId, photoId }),
-      }
-    );
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: 'Upload failed' }));
-      throw new Error(err.error || 'Failed to upload photo');
+    const { data, error } = await supabase.functions.invoke('upload-photo', {
+      body: { base64: compressed, taskId, photoId },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to upload photo');
     }
+    if (!data?.path) {
+      throw new Error('Upload response missing path');
+    }
+    return { url: data.url as string, path: data.path as string };
+  }
 
-    const result = await resp.json();
-    return result.url;
+  /**
+   * Mint short-lived signed URLs for a batch of private storage paths.
+   * Returns a map of path -> signed URL for paths the caller is allowed to read.
+   */
+  async signPhotoUrls(paths: string[]): Promise<Record<string, string>> {
+    if (!paths || paths.length === 0) return {};
+    const { data, error } = await supabase.functions.invoke('sign-photo-urls', {
+      body: { paths },
+    });
+    if (error) {
+      console.warn('[PhotoStorage] sign-photo-urls failed:', error.message);
+      return {};
+    }
+    return (data?.urls as Record<string, string>) || {};
   }
 }
 

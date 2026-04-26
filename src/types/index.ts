@@ -50,7 +50,8 @@ export interface SessionPhoto {
   id: string;
   filePath?: string;      // Path to photo file in filesystem
   base64?: string;        // Deprecated: only used for migration from old format
-  cloudUrl?: string;      // Public URL of photo in cloud storage
+  cloudPath?: string;     // Storage path in private bucket (canonical reference)
+  cloudUrl?: string;      // Last-known signed URL (short-lived; refresh via sign-photo-urls)
   capturedAt: Date;
   sessionNumber: number;
 }

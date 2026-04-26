@@ -225,8 +225,12 @@ export function calculateClientCosts(
           partsCost: sessionPartsCost,
           status: task.status,
           photoUrls: (session.photos || [])
-            .filter(p => p.cloudUrl)
-            .map(p => p.cloudUrl!),
+            // Prefer the storage path so the portal backend can mint
+            // short-lived signed URLs (bucket is private). Fall back to
+            // legacy public cloudUrl for photos uploaded before the
+            // private-bucket migration.
+            .map(p => p.cloudPath || p.cloudUrl)
+            .filter((u): u is string => !!u),
           diagnosticPdfUrl: showDiagnostic ? task.diagnosticPdfUrl : undefined,
           periods: session.periods.map(p => ({ start: new Date(p.startTime), end: new Date(p.endTime) })),
         });

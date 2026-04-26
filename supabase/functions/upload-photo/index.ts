@@ -86,11 +86,22 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: urlData } = supabase.storage
+    // Bucket is private — issue a short-lived signed URL so the caller
+    // can render the photo immediately. Persist `path` as the canonical
+    // reference; signed URLs can always be re-minted via sign-photo-urls.
+    const { data: signed, error: signErr } = await supabase.storage
       .from('session-photos')
-      .getPublicUrl(filePath)
+      .createSignedUrl(filePath, 60 * 60 * 24) // 24h
 
-    return new Response(JSON.stringify({ url: urlData.publicUrl }), {
+    if (signErr) {
+      console.error('Sign error:', signErr)
+      return new Response(JSON.stringify({ error: signErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    return new Response(JSON.stringify({ url: signed.signedUrl, path: filePath }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {

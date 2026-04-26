@@ -70,9 +70,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Code valid or no code required — return data (never expose accessCode)
+    // Code valid or no code required — return data (never expose accessCode).
+    // Resolve any private storage paths in the photo arrays into short-lived
+    // signed URLs so the public portal can render them without making the
+    // session-photos bucket public.
+    const portalData = await signPortalPhotos(supabase, data.data)
+
     return new Response(JSON.stringify({
-      data: data.data,
+      data: portalData,
       clientName: data.client_name,
       requiresCode: false,
     }), {
@@ -86,3 +91,51 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+// Walk the slimmed portal payload and replace storage paths in `ph[]` with
+// short-lived signed URLs. Entries that already look like absolute URLs
+// (legacy public URLs) are left untouched.
+async function signPortalPhotos(supabase: any, payload: any): Promise<any> {
+  if (!payload || !Array.isArray(payload.v)) return payload
+
+  const paths = new Set<string>()
+  for (const vehicle of payload.v) {
+    if (!Array.isArray(vehicle?.s)) continue
+    for (const session of vehicle.s) {
+      if (!Array.isArray(session?.ph)) continue
+      for (const entry of session.ph) {
+        if (typeof entry === 'string' && !/^https?:\/\//i.test(entry)) {
+          paths.add(entry)
+        }
+      }
+    }
+  }
+
+  if (paths.size === 0) return payload
+
+  const pathList = Array.from(paths)
+  const map: Record<string, string> = {}
+  // createSignedUrls handles up to a few hundred entries comfortably
+  const { data: signed, error } = await supabase.storage
+    .from('session-photos')
+    .createSignedUrls(pathList, 60 * 60) // 1h
+  if (error) {
+    console.error('Portal photo signing error:', error)
+    return payload
+  }
+  for (const item of signed || []) {
+    if (item.path && item.signedUrl) map[item.path] = item.signedUrl
+  }
+
+  for (const vehicle of payload.v) {
+    if (!Array.isArray(vehicle?.s)) continue
+    for (const session of vehicle.s) {
+      if (!Array.isArray(session?.ph)) continue
+      session.ph = session.ph.map((entry: string) =>
+        typeof entry === 'string' && map[entry] ? map[entry] : entry
+      )
+    }
+  }
+
+  return payload
+}
