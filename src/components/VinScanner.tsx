@@ -273,6 +273,20 @@ const VinScanner: React.FC<VinScannerProps> = ({
   // Upload OCR frame to cloud for analysis (both success and failure)
   const uploadScanFrame = async (base64: string, provider: string, result: OcrResult, success: boolean, detectedVin?: string) => {
     try {
+      // Resolve current user's primary workspace so uploads are scoped under {workspaceId}/...
+      // Storage RLS requires the path to start with a workspace the user belongs to.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return;
+      }
+      const { data: workspaceId, error: wsError } = await supabase.rpc('user_primary_workspace', {
+        _user_id: user.id,
+      });
+      if (wsError || !workspaceId) {
+        console.warn('[VIN Upload] Skipping diagnostic upload — no workspace for user');
+        return;
+      }
+
       const binaryString = atob(base64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
@@ -280,7 +294,7 @@ const VinScanner: React.FC<VinScannerProps> = ({
       }
       
       const timestamp = Date.now();
-      const baseName = `${timestamp}_${provider}_${success ? 'success' : 'fail'}`;
+      const baseName = `${workspaceId}/${timestamp}_${provider}_${success ? 'success' : 'fail'}`;
       
       // Upload JPEG frame
       const { error } = await supabase.storage
