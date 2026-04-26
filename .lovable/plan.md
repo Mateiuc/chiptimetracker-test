@@ -1,39 +1,62 @@
 ## Problem
 
-Clicking "Sign in with Google" on `/auth` returns:
+After Google sign-in, entering a workspace name and clicking **Create** spins forever. The button never resolves.
+
+### Root cause
+
+`handleCreateWorkspace` in `src/pages/Auth.tsx` runs two separate calls:
+
+1. `INSERT INTO workspaces ... RETURNING id` (via `.select('id').single()`)
+2. `INSERT INTO workspace_members (...)` 
+
+Step 1 returns the inserted row through PostgREST, which re-applies the table's **SELECT** RLS policy to the returned row. The `workspaces` SELECT policy is:
+
 ```
-{ "code": 400, "error_code": "validation_failed", "msg": "Unsupported provider: provider is not enabled" }
+USING (is_workspace_member(id, auth.uid()))
 ```
 
-Two reasons:
-1. The Google provider is not enabled on the project's backend auth settings.
-2. The code calls `supabase.auth.signInWithOAuth({ provider: 'google' })` directly. For Lovable Cloud, Google sign-in must go through the managed `lovable.auth.signInWithOAuth("google", ...)` helper, which uses Lovable's managed Google OAuth credentials (no Google Cloud Console setup required).
+At the moment of insert, the user has **no** membership row yet, so the returned row is filtered out. `.single()` then errors with `PGRST116` (no rows). Depending on timing this either silently fails or never resolves the promise as expected — and the spinner stays on.
 
-## Plan
+Even if we worked around the SELECT, the two-step approach is racy: between step 1 and step 2 the user "owns" a workspace they cannot read.
 
-1. **Run the Configure Social Login step for Google.** This will:
-   - Install `@lovable.dev/cloud-auth-js`
-   - Generate `src/integrations/lovable/index.ts` (managed OAuth client)
-   - Enable Google as an auth provider on the backend with Lovable-managed credentials
+## Fix
 
-2. **Update `src/pages/Auth.tsx`** — replace the direct Supabase Google call with the managed helper:
-   ```ts
-   import { lovable } from "@/integrations/lovable";
+Replace the two client-side inserts with a single atomic `SECURITY DEFINER` RPC that:
 
-   const result = await lovable.auth.signInWithOAuth("google", {
-     redirect_uri: window.location.origin,
-   });
-   if (result.error) { toast.error(result.error.message); return; }
-   if (result.redirected) return; // browser will redirect to Google
-   // session already set on return — navigate to "/"
-   ```
-   Email/password sign-in and signup keep using `supabase.auth.*` as today.
+1. Creates the workspace with `owner_user_id = auth.uid()`.
+2. Inserts the matching `workspace_members` row with role `'owner'`.
+3. Returns the new workspace id.
 
-3. **No code change needed** in `AuthContext.tsx` — `onAuthStateChange` already handles the post-OAuth session. After Google returns, the existing workspace-claim / invite flow continues to work.
+This bypasses the RLS chicken-and-egg, runs in one transaction, and is the same pattern already used for `claim_unclaimed_workspace` and `redeem_workspace_invite`.
 
-4. **Verification**: from `/auth`, click "Sign in with Google" → Google account chooser → redirected back to `/` (or `/auth` to choose/claim a workspace if first sign-in).
+### Migration
 
-## Notes
+Add function `public.create_workspace(_name text) returns uuid`:
 
-- No need for the user to create a Google Cloud project or paste any client ID/secret. If they ever want to use their own branded credentials later, that's a separate setting in the Cloud auth panel.
-- This does not change the email/password flow, RLS, workspace tables, or any of the Phase 1 security work.
+- `SECURITY DEFINER`, `SET search_path = public`
+- Validates `auth.uid()` is not null and `_name` is non-empty (trimmed)
+- Inserts workspace + owner membership
+- Returns the new id
+
+### Client change (`src/pages/Auth.tsx`)
+
+Replace the body of `handleCreateWorkspace` with:
+
+```ts
+const { data, error } = await supabase.rpc('create_workspace', {
+  _name: workspaceName.trim(),
+});
+if (error) throw error;
+await refreshWorkspace();
+```
+
+Also add a `console.error` in the catch block so future failures show up in logs instead of being swallowed.
+
+## Files touched
+
+- `supabase/migrations/<new>.sql` — add `create_workspace` function
+- `src/pages/Auth.tsx` — switch create flow to RPC, log errors
+
+## Out of scope
+
+No UI redesign, no changes to sign-in, claim, or invite flows.
