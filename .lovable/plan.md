@@ -1,46 +1,61 @@
-# Portal PIN Lockout
+## Problem
 
-Add server-side attempt tracking and lockout to the `get-portal` edge function. After 3 failed PIN attempts within a 30-minute rolling window, the portal is locked for 1 hour.
+The `vin-scan-failures` bucket SELECT policy currently allows any authenticated user to read every file. Files are also uploaded with no workspace prefix, so they cannot be scoped by path today.
 
-## Database (migration)
+## Fix
 
-Add three nullable columns to `public.client_portals`:
+Two-part change: namespace uploads under the user's workspace, then tighten storage policies to require workspace membership.
 
-- `failed_attempts` integer NOT NULL DEFAULT 0
-- `first_failed_at` timestamptz NULL — start of the current 30-min window
-- `locked_until` timestamptz NULL — when the lockout expires
+### 1. Upload path (client) — `src/components/VinScanner.tsx`
 
-No RLS changes needed (table is already locked down; the edge function uses the service role).
+Prefix uploaded keys with the user's workspace id:
 
-## Edge function: `supabase/functions/get-portal/index.ts`
+```
+{workspaceId}/{timestamp}_{provider}_{success|fail}.jpg
+{workspaceId}/{timestamp}_{provider}_{success|fail}.json
+```
 
-When a portal has an `access_code` and is not in `preview` mode:
+Resolve the workspace id via `user_primary_workspace(auth.uid())` (already used elsewhere) — fetch once via `supabase.rpc` or read from existing app state. If no workspace is available (unauthenticated edge case), skip the diagnostic upload silently.
 
-1. **Before validating the code**, check `locked_until`:
-   - If `locked_until > now()`, return HTTP 429 with `{ error: "Too many attempts", lockedUntil, retryAfterSeconds }`. Do not reveal whether the supplied code was right.
-2. **If no `code` provided**, return the existing `requiresCode` metadata response (no counter changes).
-3. **If code matches**: reset `failed_attempts = 0`, `first_failed_at = null`, `locked_until = null`, then return portal data as today.
-4. **If code is wrong**:
-   - If `first_failed_at` is null OR older than 30 minutes → reset window: `failed_attempts = 1`, `first_failed_at = now()`.
-   - Else increment `failed_attempts`.
-   - If new `failed_attempts >= 3` → set `locked_until = now() + 1 hour` and return HTTP 429 with `lockedUntil`.
-   - Otherwise return HTTP 403 `{ error: "Invalid access code", attemptsRemaining }`.
+### 2. Storage RLS migration
 
-All counter writes use the service role client already in the function. Preview mode (`preview=1`, used by the workspace owner inside the app) bypasses both the lockout and the counter so internal users can never lock themselves out.
+Drop the existing overly-broad policies and replace with workspace-scoped ones (mirroring the `session-photos` and `diagnostic-pdfs` pattern):
 
-## Client: `src/pages/ClientPortal.tsx`
+```sql
+DROP POLICY IF EXISTS "Authenticated can read vin-scan-failures"   ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated can upload vin-scan-failures" ON storage.objects;
 
-When the portal call returns 429:
+CREATE POLICY "Workspace members can read vin-scan-failures"
+ON storage.objects FOR SELECT TO authenticated
+USING (
+  bucket_id = 'vin-scan-failures'
+  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
+);
 
-- Show a clear message: "Too many incorrect attempts. Try again at HH:MM" (formatted from `lockedUntil`).
-- Disable the PIN input until that time.
+CREATE POLICY "Workspace members can upload vin-scan-failures"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'vin-scan-failures'
+  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
+);
 
-When the portal returns 403 with `attemptsRemaining`:
+CREATE POLICY "Workspace members can update vin-scan-failures"
+ON storage.objects FOR UPDATE TO authenticated
+USING (
+  bucket_id = 'vin-scan-failures'
+  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
+);
 
-- Show "Incorrect code. N attempt(s) remaining."
+CREATE POLICY "Workspace members can delete vin-scan-failures"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'vin-scan-failures'
+  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
+);
+```
 
-## Notes
+### Notes
 
-- This is a per-portal account-lockout control, not generic API rate limiting — consistent with project policy.
-- 4-digit PIN length is unchanged; lockout reduces the practical brute-force space to ~3 guesses per hour per portal.
-- Successful entry fully clears the counter, so legitimate users who mistype once or twice are not penalized later.
+- Bucket is already private (`public = false`), so no public URL exposure.
+- Legacy flat-rooted files (no `{workspaceId}/` prefix) become inaccessible to all authenticated users — acceptable since they are diagnostic-only and nothing in the app reads them.
+- This also closes the related warning about missing INSERT/UPDATE/DELETE policies for the bucket.
