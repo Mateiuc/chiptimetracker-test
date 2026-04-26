@@ -1,61 +1,42 @@
-## Problem
+## Goal
+Fix two security findings:
+1. Edge functions leak raw DB/storage error messages
+2. `session-photos` bucket lacks explicit INSERT/UPDATE/DELETE RLS policies
 
-The `vin-scan-failures` bucket SELECT policy currently allows any authenticated user to read every file. Files are also uploaded with no workspace prefix, so they cannot be scoped by path today.
+## Changes
 
-## Fix
+### 1. Sanitize edge function error responses
+Replace `error.message` with generic strings in 500 responses. Keep `console.error` with full detail server-side.
 
-Two-part change: namespace uploads under the user's workspace, then tighten storage policies to require workspace membership.
+- `supabase/functions/get-portal/index.ts` — `'Database error'`
+- `supabase/functions/sync-portal/index.ts` — `'Database error'`
+- `supabase/functions/upload-photo/index.ts` — `'Storage error'` (both upload + sign branches)
+- `supabase/functions/upload-diagnostic/index.ts` — `'Storage error'`
+- `supabase/functions/sign-photo-urls/index.ts` — `'Storage error'`
+- `supabase/functions/sign-diagnostic-url/index.ts` — `'Storage error'`
 
-### 1. Upload path (client) — `src/components/VinScanner.tsx`
-
-Prefix uploaded keys with the user's workspace id:
-
-```
-{workspaceId}/{timestamp}_{provider}_{success|fail}.jpg
-{workspaceId}/{timestamp}_{provider}_{success|fail}.json
-```
-
-Resolve the workspace id via `user_primary_workspace(auth.uid())` (already used elsewhere) — fetch once via `supabase.rpc` or read from existing app state. If no workspace is available (unauthenticated edge case), skip the diagnostic upload silently.
-
-### 2. Storage RLS migration
-
-Drop the existing overly-broad policies and replace with workspace-scoped ones (mirroring the `session-photos` and `diagnostic-pdfs` pattern):
+### 2. Add session-photos write/delete RLS policies
+New migration adding workspace-scoped policies on `storage.objects` for `bucket_id = 'session-photos'`, mirroring the existing SELECT policy pattern (path prefix = workspace id):
 
 ```sql
-DROP POLICY IF EXISTS "Authenticated can read vin-scan-failures"   ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated can upload vin-scan-failures" ON storage.objects;
-
-CREATE POLICY "Workspace members can read vin-scan-failures"
-ON storage.objects FOR SELECT TO authenticated
-USING (
-  bucket_id = 'vin-scan-failures'
-  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
-);
-
-CREATE POLICY "Workspace members can upload vin-scan-failures"
+CREATE POLICY "Workspace members can upload session photos"
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (
-  bucket_id = 'vin-scan-failures'
+  bucket_id = 'session-photos'
   AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
 );
 
-CREATE POLICY "Workspace members can update vin-scan-failures"
+CREATE POLICY "Workspace members can update session photos"
 ON storage.objects FOR UPDATE TO authenticated
-USING (
-  bucket_id = 'vin-scan-failures'
-  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
-);
+USING (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()))
+WITH CHECK (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()));
 
-CREATE POLICY "Workspace members can delete vin-scan-failures"
+CREATE POLICY "Workspace members can delete session photos"
 ON storage.objects FOR DELETE TO authenticated
-USING (
-  bucket_id = 'vin-scan-failures'
-  AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid())
-);
+USING (bucket_id = 'session-photos' AND public.is_workspace_member(((storage.foldername(name))[1])::uuid, auth.uid()));
 ```
 
-### Notes
+Service-role uploads via `upload-photo` edge function continue to work (they bypass RLS). These policies provide defense-in-depth so direct client writes are also constrained correctly.
 
-- Bucket is already private (`public = false`), so no public URL exposure.
-- Legacy flat-rooted files (no `{workspaceId}/` prefix) become inaccessible to all authenticated users — acceptable since they are diagnostic-only and nothing in the app reads them.
-- This also closes the related warning about missing INSERT/UPDATE/DELETE policies for the bucket.
+### 3. Mark findings fixed
+Mark `edge_fn_raw_errors` and `session_photos_missing_insert_update_delete` as fixed.
