@@ -172,4 +172,18 @@ All colors MUST be HSL.
   .card-pressable:active {
     transform: scale(0.985);
   }
+
+  /* Ensure date/time picker icons are fully visible inside inputs */
+  input[type="date"],
+  input[type="time"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    display: block;
+    opacity: 1;
+    cursor: pointer;
+    padding: 0 2px;
+  }
 }
