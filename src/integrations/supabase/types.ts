@@ -49,7 +49,10 @@ export type Database = {
           client_local_id: string
           client_name: string
           data: Json
+          failed_attempts: number
+          first_failed_at: string | null
           id: string
+          locked_until: string | null
           updated_at: string
           workspace_id: string
         }
@@ -58,7 +61,10 @@ export type Database = {
           client_local_id: string
           client_name: string
           data?: Json
+          failed_attempts?: number
+          first_failed_at?: string | null
           id: string
+          locked_until?: string | null
           updated_at?: string
           workspace_id: string
         }
@@ -67,7 +73,10 @@ export type Database = {
           client_local_id?: string
           client_name?: string
           data?: Json
+          failed_attempts?: number
+          first_failed_at?: string | null
           id?: string
+          locked_until?: string | null
           updated_at?: string
           workspace_id?: string
         }
