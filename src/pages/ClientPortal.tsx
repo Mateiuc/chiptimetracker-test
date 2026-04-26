@@ -22,6 +22,16 @@ const ClientPortal = () => {
   const [verifying, setVerifying] = useState(false);
   const [requiresCode, setRequiresCode] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'billed' | 'paid'>('pending');
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [lockedUntil]);
+
+  const isLocked = !!(lockedUntil && lockedUntil > now);
 
   const cloudPortalId = searchParams.get('id');
   const isSharedMode = location.pathname === '/client-view' && !cloudPortalId;
@@ -33,6 +43,11 @@ const ClientPortal = () => {
           const result = await checkPortalAccess(cloudPortalId, isPreview);
           if (result.requiresCode) {
             setRequiresCode(true);
+            if (result.locked && result.lockedUntil) {
+              const ms = new Date(result.lockedUntil).getTime();
+              setLockedUntil(ms);
+              setError(`Too many incorrect attempts. Try again at ${new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+            }
           } else {
             setCostSummary(result.data!);
             setVerified(true);
@@ -69,8 +84,17 @@ const ClientPortal = () => {
         const result = await fetchPortalWithCode(cloudPortalId, pin);
         setCostSummary(result.data);
         setVerified(true);
+        setLockedUntil(null);
       } catch (e: any) {
-        setError(e.message?.includes('Invalid') ? 'Incorrect code. Please try again.' : 'Verification failed.');
+        if (e?.locked && e?.lockedUntil) {
+          const ms = new Date(e.lockedUntil).getTime();
+          setLockedUntil(ms);
+          setError(`Too many incorrect attempts. Try again at ${new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+        } else if (typeof e?.attemptsRemaining === 'number') {
+          setError(`Incorrect code. ${e.attemptsRemaining} attempt${e.attemptsRemaining === 1 ? '' : 's'} remaining.`);
+        } else {
+          setError(e?.message?.includes('Invalid') ? 'Incorrect code. Please try again.' : 'Verification failed.');
+        }
         setPin('');
       } finally {
         setVerifying(false);
@@ -139,7 +163,7 @@ const ClientPortal = () => {
 
             {/* OTP Input */}
             <div className="flex justify-center">
-              <InputOTP maxLength={4} value={pin} onChange={setPin}>
+              <InputOTP maxLength={4} value={pin} onChange={setPin} disabled={isLocked}>
                 <InputOTPGroup className="gap-3">
                   {[0,1,2,3].map(i => (
                     <InputOTPSlot
@@ -160,10 +184,12 @@ const ClientPortal = () => {
 
             <Button
               onClick={handleVerify}
-              disabled={pin.length < 4 || verifying}
+              disabled={pin.length < 4 || verifying || isLocked}
               className="w-full h-12 text-base font-semibold bg-blue-500 hover:bg-blue-400 text-white rounded-xl"
             >
-              {verifying ? (
+              {isLocked ? (
+                'Locked — try again later'
+              ) : verifying ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Verifying...
