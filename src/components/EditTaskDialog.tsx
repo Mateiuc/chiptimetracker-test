@@ -464,8 +464,8 @@ export const EditTaskDialog = ({
   // Helper to render period inputs (shared logic, different styling)
   const renderPeriodInputs = (session: WorkSession, period: WorkPeriod, desktop: boolean) => {
     const inputH = desktop ? 'h-10 text-sm' : 'h-9 text-sm';
-    const dateW = desktop ? 'flex-1 min-w-0' : 'flex-1';
-    const timeW = desktop ? 'w-28' : 'w-20';
+    const dateW = desktop ? 'w-36 shrink-0' : 'flex-1';
+    const timeW = desktop ? 'w-32 shrink-0 pr-8' : 'w-24 pr-8';
     return (
       <>
         {/* Start */}
