@@ -320,6 +320,17 @@ export const SettingsDialog = ({
                     <ChevronRight className="h-4 w-4" />
                   </div>
                 </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between h-auto py-4 bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/30 font-semibold mt-2"
+                  onClick={() => setShowWorkspace(true)}
+                >
+                  <span>Workspace & Account</span>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </Button>
               </div>
             </div>
           )}
