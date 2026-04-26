@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 function generateId(length = 8): string {
@@ -22,6 +22,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ---- Authenticate caller ----
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const token = authHeader.replace('Bearer ', '')
+
+    // Service-role client for DB writes
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
+    // Verify the user
+    const { data: userData, error: userErr } = await admin.auth.getUser(token)
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userId = userData.user.id
+
     const { clientLocalId, clientName, accessCode, data } = await req.json()
 
     if (!clientLocalId || !clientName) {
@@ -31,21 +57,33 @@ Deno.serve(async (req) => {
       })
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    // Resolve the user's primary workspace
+    const { data: ws, error: wsErr } = await admin
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (wsErr || !ws) {
+      return new Response(JSON.stringify({ error: 'No workspace for user' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const workspaceId = ws.workspace_id
 
-    // Check if portal exists for this client
-    const { data: existing } = await supabase
+    // Find an existing portal for this client within this workspace only
+    const { data: existing } = await admin
       .from('client_portals')
       .select('id')
       .eq('client_local_id', clientLocalId)
+      .eq('workspace_id', workspaceId)
       .maybeSingle()
 
     const portalId = existing?.id || generateId()
 
-    const { error } = await supabase
+    const { error } = await admin
       .from('client_portals')
       .upsert({
         id: portalId,
@@ -53,8 +91,9 @@ Deno.serve(async (req) => {
         client_name: clientName,
         access_code: accessCode || null,
         data: data || {},
+        workspace_id: workspaceId,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'client_local_id' })
+      }, { onConflict: 'id' })
 
     if (error) {
       console.error('Upsert error:', error)
