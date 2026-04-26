@@ -1,62 +1,36 @@
-## Problem
+## Diagnosis
 
-After Google sign-in, entering a workspace name and clicking **Create** spins forever. The button never resolves.
+The "Create" button on the workspace setup screen spins forever because the browser is running an **old cached version of the app** served by the PWA service worker — not the current code that uses the new `create_workspace` RPC.
 
-### Root cause
+Evidence:
+- Network logs show **zero** calls to `/rpc/create_workspace` after clicking Create.
+- Network logs show no `INSERT` to the `workspaces` table either.
+- The database confirms no workspace was created for your user.
+- `vite.config.ts` registers `vite-plugin-pwa` with `registerType: "autoUpdate"` and aggressive Workbox precaching of all JS — so old JS is served until the SW finishes a background update and the user reloads twice.
 
-`handleCreateWorkspace` in `src/pages/Auth.tsx` runs two separate calls:
-
-1. `INSERT INTO workspaces ... RETURNING id` (via `.select('id').single()`)
-2. `INSERT INTO workspace_members (...)` 
-
-Step 1 returns the inserted row through PostgREST, which re-applies the table's **SELECT** RLS policy to the returned row. The `workspaces` SELECT policy is:
-
-```
-USING (is_workspace_member(id, auth.uid()))
-```
-
-At the moment of insert, the user has **no** membership row yet, so the returned row is filtered out. `.single()` then errors with `PGRST116` (no rows). Depending on timing this either silently fails or never resolves the promise as expected — and the spinner stays on.
-
-Even if we worked around the SELECT, the two-step approach is racy: between step 1 and step 2 the user "owns" a workspace they cannot read.
+A second related issue: the OAuth flow path `/~oauth/*` is **not** in `navigateFallbackDenylist`, so the service worker can intercept OAuth redirects and break Google sign-in on subsequent attempts (per Lovable PWA + OAuth requirements).
 
 ## Fix
 
-Replace the two client-side inserts with a single atomic `SECURITY DEFINER` RPC that:
+1. **Update `vite.config.ts` PWA Workbox config** to:
+   - Add `navigateFallbackDenylist: [/^\/~oauth/]` so OAuth is never intercepted by the SW.
+   - Add `clientsClaim: true` and `skipWaiting: true` so a new SW takes over immediately on the next page load instead of waiting for all tabs to close.
+   - Add `cleanupOutdatedCaches: true` to purge stale precached JS.
 
-1. Creates the workspace with `owner_user_id = auth.uid()`.
-2. Inserts the matching `workspace_members` row with role `'owner'`.
-3. Returns the new workspace id.
+2. **Add a one-time SW unregister + cache flush in `src/main.tsx`** guarded by a version key in `localStorage`. On first load after this deploy, it will:
+   - Unregister all existing service workers.
+   - Delete all caches.
+   - Reload the page once.
+   This frees every existing user (including you) from the stale bundle without needing manual "hard refresh" instructions. After the one-time reset, the new PWA registers normally.
 
-This bypasses the RLS chicken-and-egg, runs in one transaction, and is the same pattern already used for `claim_unclaimed_workspace` and `redeem_workspace_invite`.
+3. **No database or RPC changes needed** — the `create_workspace` RPC is already correctly defined and works (verified). The workspace setup flow in `src/pages/Auth.tsx` is already correct.
 
-### Migration
+## After the fix
 
-Add function `public.create_workspace(_name text) returns uuid`:
+- Reload the preview once. Your browser will run the cleanup (you may see a brief blank flash + auto-reload), then load the current app.
+- Click Create on "Set up your workspace" → it will call `create_workspace` RPC → workspace created → you're routed to the dashboard.
 
-- `SECURITY DEFINER`, `SET search_path = public`
-- Validates `auth.uid()` is not null and `_name` is non-empty (trimmed)
-- Inserts workspace + owner membership
-- Returns the new id
+## Files changed
 
-### Client change (`src/pages/Auth.tsx`)
-
-Replace the body of `handleCreateWorkspace` with:
-
-```ts
-const { data, error } = await supabase.rpc('create_workspace', {
-  _name: workspaceName.trim(),
-});
-if (error) throw error;
-await refreshWorkspace();
-```
-
-Also add a `console.error` in the catch block so future failures show up in logs instead of being swallowed.
-
-## Files touched
-
-- `supabase/migrations/<new>.sql` — add `create_workspace` function
-- `src/pages/Auth.tsx` — switch create flow to RPC, log errors
-
-## Out of scope
-
-No UI redesign, no changes to sign-in, claim, or invite flows.
+- `vite.config.ts` — Workbox options (denylist, claim, skipWaiting, cleanup).
+- `src/main.tsx` — one-time SW + cache reset block.
