@@ -37,12 +37,23 @@ export const appSyncService = {
     }
     const now = new Date().toISOString();
 
+    // SECURITY: Strip per-client access codes before syncing. They live only
+    // in the cloud `client_portals` table (server-validated) and on each
+    // device locally. They must never be uploaded to a JSON sync blob.
+    const sanitized: SyncData = {
+      ...data,
+      clients: (data.clients || []).map((c: any) => {
+        const { accessCode: _omit, ...rest } = c || {};
+        return rest;
+      }),
+    };
+
     const { error } = await supabase
       .from('app_sync')
       .upsert({
         sync_id: workspaceId,
         workspace_id: workspaceId,
-        data: data as any,
+        data: sanitized as any,
         updated_at: now,
       }, { onConflict: 'workspace_id' });
 
