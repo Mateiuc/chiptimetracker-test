@@ -36,7 +36,8 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error('Portal lookup error:', error)
+      return new Response(JSON.stringify({ error: 'Database error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('createSignedUrl error:', error)
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ error: 'Storage error' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
