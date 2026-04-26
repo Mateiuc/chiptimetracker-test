@@ -728,6 +728,7 @@ export const SettingsDialog = ({
         onStartWork={onStartWork}
         onMoveVehicle={onMoveVehicle}
       />
+      <WorkspaceManager open={showWorkspace} onOpenChange={setShowWorkspace} />
     </Dialog>
   );
 };
