@@ -35,6 +35,7 @@ export interface Vehicle {
   year?: number;
   color?: string;
   diagnosticPdfUrl?: string;
+  diagnosticPdfPath?: string; // Storage path in private bucket (re-sign on demand)
   prepaidAmount?: number;
 }
 
@@ -97,7 +98,8 @@ export interface Task {
   chargeMinimumHour?: boolean; // @deprecated - use session.chargeMinimumHour instead
   importedSalary?: number; // Exact dollar amount from XLS "rel. Salary" column
   billedAmount?: number;   // Locked cost at time of billing — never recalculated
-  diagnosticPdfUrl?: string; // URL to uploaded diagnostic PDF for this task
+  diagnosticPdfUrl?: string; // Last-known signed URL (may expire)
+  diagnosticPdfPath?: string; // Storage path in private bucket (canonical)
 }
 
 export interface BackupSettings {

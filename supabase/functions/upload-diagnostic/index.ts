@@ -84,11 +84,22 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: urlData } = supabase.storage
+    // Bucket is private — return a long-lived signed URL plus the
+    // canonical storage path so the app can re-mint signed URLs later
+    // via sign-diagnostic-url.
+    const { data: signed, error: signErr } = await supabase.storage
       .from('diagnostic-pdfs')
-      .getPublicUrl(filePath)
+      .createSignedUrl(filePath, 60 * 60 * 24 * 7) // 7 days
 
-    return new Response(JSON.stringify({ url: urlData.publicUrl }), {
+    if (signErr) {
+      console.error('Sign error:', signErr)
+      return new Response(JSON.stringify({ error: signErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    return new Response(JSON.stringify({ url: signed.signedUrl, path: filePath }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {

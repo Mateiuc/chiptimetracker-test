@@ -74,7 +74,8 @@ Deno.serve(async (req) => {
     // Resolve any private storage paths in the photo arrays into short-lived
     // signed URLs so the public portal can render them without making the
     // session-photos bucket public.
-    const portalData = await signPortalPhotos(supabase, data.data)
+    let portalData = await signPortalPhotos(supabase, data.data)
+    portalData = await signPortalDiagnosticPdfs(supabase, portalData)
 
     return new Response(JSON.stringify({
       data: portalData,
@@ -134,6 +135,52 @@ async function signPortalPhotos(supabase: any, payload: any): Promise<any> {
       session.ph = session.ph.map((entry: string) =>
         typeof entry === 'string' && map[entry] ? map[entry] : entry
       )
+    }
+  }
+
+  return payload
+}
+
+
+// Walk the slimmed portal payload and replace `dpdf` storage paths with
+// short-lived signed URLs from the diagnostic-pdfs bucket. Entries that
+// already look like absolute URLs (legacy) are left untouched.
+async function signPortalDiagnosticPdfs(supabase: any, payload: any): Promise<any> {
+  if (!payload || !Array.isArray(payload.v)) return payload
+
+  const paths = new Set<string>()
+  for (const vehicle of payload.v) {
+    if (!Array.isArray(vehicle?.s)) continue
+    for (const session of vehicle.s) {
+      const entry = session?.dpdf
+      if (typeof entry === 'string' && entry && !/^https?:\/\//i.test(entry)) {
+        paths.add(entry)
+      }
+    }
+  }
+
+  if (paths.size === 0) return payload
+
+  const pathList = Array.from(paths)
+  const map: Record<string, string> = {}
+  const { data: signed, error } = await supabase.storage
+    .from('diagnostic-pdfs')
+    .createSignedUrls(pathList, 60 * 60) // 1h
+  if (error) {
+    console.error('Portal diagnostic PDF signing error:', error)
+    return payload
+  }
+  for (const item of signed || []) {
+    if (item.path && item.signedUrl) map[item.path] = item.signedUrl
+  }
+
+  for (const vehicle of payload.v) {
+    if (!Array.isArray(vehicle?.s)) continue
+    for (const session of vehicle.s) {
+      const entry = session?.dpdf
+      if (typeof entry === 'string' && map[entry]) {
+        session.dpdf = map[entry]
+      }
     }
   }
 

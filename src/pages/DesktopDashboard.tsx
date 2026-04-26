@@ -32,6 +32,7 @@ import jsPDF from 'jspdf';
 import billBackground from '@/assets/bill-background.jpg';
 import { stripDiacritics, mergePdfs } from '@/lib/pdfUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveDiagnosticPdfUrl } from '@/services/diagnosticPdfService';
 
 type FilterType = 'all' | 'active' | 'completed' | 'billed' | 'paid';
 
@@ -522,10 +523,12 @@ const DesktopDashboard = () => {
     }
 
     // --- Merge diagnostic PDF if available (task-level) ---
-    if (task.diagnosticPdfUrl) {
+    if (task.diagnosticPdfUrl || task.diagnosticPdfPath) {
       try {
+        const freshUrl = await resolveDiagnosticPdfUrl({ path: task.diagnosticPdfPath, url: task.diagnosticPdfUrl });
+        if (!freshUrl) throw new Error('Could not resolve diagnostic PDF URL');
         const billBlob = doc.output('blob');
-        const mergedBlob = await mergePdfs(billBlob, task.diagnosticPdfUrl);
+        const mergedBlob = await mergePdfs(billBlob, freshUrl);
         const url = URL.createObjectURL(mergedBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -568,7 +571,7 @@ const DesktopDashboard = () => {
         });
 
         if (error) throw error;
-        updateTask(taskId, { diagnosticPdfUrl: data.url });
+        updateTask(taskId, { diagnosticPdfUrl: data.url, diagnosticPdfPath: data.path });
         toast({ title: 'Uploaded', description: 'Diagnostic PDF attached to this task' });
       } catch (err) {
         console.error('Upload diagnostic error:', err);

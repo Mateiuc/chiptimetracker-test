@@ -15,6 +15,7 @@ import { getVehicleColorScheme, VehicleColorScheme } from '@/lib/vehicleColors';
 import billBackground from '@/assets/bill-background.jpg';
 import { stripDiacritics, mergePdfs } from '@/lib/pdfUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveDiagnosticPdfUrl } from '@/services/diagnosticPdfService';
 import { PORTAL_BASE_URL } from '@/lib/clientPortalUtils';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -640,10 +641,12 @@ export const TaskCard = ({
         .join(' ') || 'your vehicle';
       
       // Merge diagnostic PDF if available (task-level)
-      if (task.diagnosticPdfUrl) {
+      if (task.diagnosticPdfUrl || task.diagnosticPdfPath) {
         try {
+          const freshUrl = await resolveDiagnosticPdfUrl({ path: task.diagnosticPdfPath, url: task.diagnosticPdfUrl });
+          if (!freshUrl) throw new Error('Could not resolve diagnostic PDF URL');
           const billBlob = doc.output('blob');
-          const mergedBlob = await mergePdfs(billBlob, task.diagnosticPdfUrl);
+          const mergedBlob = await mergePdfs(billBlob, freshUrl);
           const reader = new FileReader();
           const mergedBase64 = await new Promise<string>((resolve, reject) => {
             reader.onloadend = () => {
@@ -978,10 +981,12 @@ export const TaskCard = ({
       }
 
       // Merge diagnostic PDF if available (task-level)
-      if (task.diagnosticPdfUrl) {
+      if (task.diagnosticPdfUrl || task.diagnosticPdfPath) {
         try {
+          const freshUrl = await resolveDiagnosticPdfUrl({ path: task.diagnosticPdfPath, url: task.diagnosticPdfUrl });
+          if (!freshUrl) throw new Error('Could not resolve diagnostic PDF URL');
           const billBlob = doc.output('blob');
-          const mergedBlob = await mergePdfs(billBlob, task.diagnosticPdfUrl);
+          const mergedBlob = await mergePdfs(billBlob, freshUrl);
           const url = URL.createObjectURL(mergedBlob);
           const a = document.createElement('a');
           a.href = url;
@@ -1259,7 +1264,7 @@ export const TaskCard = ({
 
         if (error) throw error;
         if (onUpdateTask) {
-          onUpdateTask({ ...task, diagnosticPdfUrl: data.url });
+          onUpdateTask({ ...task, diagnosticPdfUrl: data.url, diagnosticPdfPath: data.path });
         }
         toast({ title: 'Uploaded', description: 'Diagnostic PDF attached to this task' });
       } catch (err) {

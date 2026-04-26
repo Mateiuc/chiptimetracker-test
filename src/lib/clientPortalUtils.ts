@@ -231,7 +231,7 @@ export function calculateClientCosts(
             // private-bucket migration.
             .map(p => p.cloudPath || p.cloudUrl)
             .filter((u): u is string => !!u),
-          diagnosticPdfUrl: showDiagnostic ? task.diagnosticPdfUrl : undefined,
+          diagnosticPdfUrl: showDiagnostic ? (task.diagnosticPdfPath || task.diagnosticPdfUrl) : undefined,
           periods: session.periods.map(p => ({ start: new Date(p.startTime), end: new Date(p.endTime) })),
         });
       });
