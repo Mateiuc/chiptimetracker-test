@@ -466,7 +466,6 @@ export const EditTaskDialog = ({
     const inputH = desktop ? 'h-10 text-sm' : 'h-9 text-sm';
     const dateW = desktop ? 'flex-1 min-w-0' : 'flex-1';
     const timeW = desktop ? 'w-28' : 'w-20';
-    const pickerHide = '[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden';
     return (
       <>
         {/* Start */}
@@ -479,14 +478,14 @@ export const EditTaskDialog = ({
               value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.dateValue : formatDateForInput(period.startTime)}
               onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'date', e.target.value, period)}
               onBlur={handlePeriodTimeBlur}
-              className={`${inputH} font-medium ${dateW} shrink-0 ${pickerHide}`}
+              className={`${inputH} font-medium ${dateW} shrink-0`}
             />
             <Input
               type="time"
               value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'startTime' ? editingPeriod.timeValue : formatTimeForInput(period.startTime)}
               onChange={e => handlePeriodTimeChange(session.id, period.id, 'startTime', 'time', e.target.value, period)}
               onBlur={handlePeriodTimeBlur}
-              className={`${inputH} ${timeW} font-medium shrink-0 ${pickerHide}`}
+              className={`${inputH} ${timeW} font-medium shrink-0`}
             />
           </div>
         </div>
@@ -500,14 +499,14 @@ export const EditTaskDialog = ({
               value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.dateValue : formatDateForInput(period.endTime)}
               onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'date', e.target.value, period)}
               onBlur={handlePeriodTimeBlur}
-              className={`${inputH} font-medium ${dateW} shrink-0 ${pickerHide}`}
+              className={`${inputH} font-medium ${dateW} shrink-0`}
             />
             <Input
               type="time"
               value={editingPeriod?.sessionId === session.id && editingPeriod?.periodId === period.id && editingPeriod?.field === 'endTime' ? editingPeriod.timeValue : formatTimeForInput(period.endTime)}
               onChange={e => handlePeriodTimeChange(session.id, period.id, 'endTime', 'time', e.target.value, period)}
               onBlur={handlePeriodTimeBlur}
-              className={`${inputH} ${timeW} font-medium shrink-0 ${pickerHide}`}
+              className={`${inputH} ${timeW} font-medium shrink-0`}
             />
           </div>
         </div>
