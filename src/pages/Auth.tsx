@@ -76,11 +76,13 @@ const Auth = () => {
   const handleGoogle = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth` },
+      const { lovable } = await import('@/integrations/lovable');
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: `${window.location.origin}/auth`,
       });
-      if (error) throw error;
+      if (result.error) throw new Error(result.error.message);
+      if (result.redirected) return; // browser is navigating to Google
+      // Session set in-place — AuthContext's onAuthStateChange will pick it up
     } catch (err: any) {
       toast({ title: 'Google sign-in failed', description: err.message, variant: 'destructive' });
       setBusy(false);
