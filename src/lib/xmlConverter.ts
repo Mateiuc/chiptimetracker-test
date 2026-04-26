@@ -161,7 +161,9 @@ export const exportToXML = (data: DatabaseExport): string => {
   if (data.settings.defaultProgrammingRate != null) xml += `defaultProgrammingRate="${escapeXML(data.settings.defaultProgrammingRate)}" `;
   if (data.settings.defaultAddKeyRate != null) xml += `defaultAddKeyRate="${escapeXML(data.settings.defaultAddKeyRate)}" `;
   if (data.settings.defaultAllKeysLostRate != null) xml += `defaultAllKeysLostRate="${escapeXML(data.settings.defaultAllKeysLostRate)}" `;
-  if (data.settings.googleApiKey) xml += `googleApiKey="${escapeXML(data.settings.googleApiKey)}" `;
+  // SECURITY: googleApiKey/grokApiKey/ocrSpaceApiKey are intentionally
+  // excluded from XML backups to avoid leaking third-party API keys via
+  // shared/exported files. They are device-local OCR credentials.
   if (data.settings.paymentLink) xml += `paymentLink="${escapeXML(data.settings.paymentLink)}" `;
   if (data.settings.paymentLabel) xml += `paymentLabel="${escapeXML(data.settings.paymentLabel)}" `;
   xml += '/>\n';
