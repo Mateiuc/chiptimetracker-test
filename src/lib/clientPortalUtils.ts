@@ -399,15 +399,19 @@ async function compressToBase64(payload: string): Promise<string> {
   return btoa(binary);
 }
 
-// Encode client data using slim format
-export async function encodeClientData(data: ClientCostSummary, accessCode: string): Promise<string> {
+// Encode client data using slim format.
+// SECURITY: We intentionally do NOT embed the access code in the hash payload.
+// Anyone with the URL can decode the hash, so a hash-only PIN provides no real
+// protection. PIN-gated access must use the cloud portal route (?id=...) where
+// the code is checked server-side.
+export async function encodeClientData(data: ClientCostSummary, _accessCode?: string): Promise<string> {
   const slim = slimDown(data);
-  const payload = JSON.stringify({ s: slim, c: accessCode });
+  const payload = JSON.stringify({ s: slim });
   return compressToBase64(payload);
 }
 
 // Decode client data - handles both slim and legacy formats
-export async function decodeClientData(encoded: string): Promise<{ data: ClientCostSummary; accessCode: string }> {
+export async function decodeClientData(encoded: string): Promise<{ data: ClientCostSummary; accessCode?: string }> {
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -419,13 +423,13 @@ export async function decodeClientData(encoded: string): Promise<{ data: ClientC
   const text = await new Response(decompressedStream).text();
   const parsed = JSON.parse(text);
 
-  // Slim format uses { s: SlimPayload, c: accessCode }
-  if (parsed.s && parsed.c !== undefined) {
-    return { data: inflateSlimPayload(parsed.s), accessCode: parsed.c };
+  // Slim format
+  if (parsed.s) {
+    return { data: inflateSlimPayload(parsed.s) };
   }
 
   // Legacy format uses { data: ClientCostSummary, accessCode }
-  return { data: parsed.data, accessCode: parsed.accessCode };
+  return { data: parsed.data };
 }
 
 // Generate a self-contained HTML file for sharing large datasets

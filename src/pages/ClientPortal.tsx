@@ -44,14 +44,11 @@ const ClientPortal = () => {
             setLoading(false);
             return;
           }
-          const { data, accessCode } = await decodeClientData(hash);
+          // Hash-shared portals are advisory-only (no PIN gate). PIN protection
+          // is enforced server-side only when using the cloud portal route (?id=...).
+          const { data } = await decodeClientData(hash);
           setCostSummary(data);
-          if (!accessCode) {
-            setVerified(true);
-          } else {
-            setRequiresCode(true);
-            (window as any).__portalAccessCode = accessCode;
-          }
+          setVerified(true);
         } else {
           setError('Invalid portal link.');
         }

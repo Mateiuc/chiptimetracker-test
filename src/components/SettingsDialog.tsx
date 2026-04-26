@@ -16,6 +16,8 @@ import { ManageClientsDialog } from './ManageClientsDialog';
 import { getVehicleColorScheme } from '@/lib/vehicleColors';
 import { BackupView } from './BackupView';
 import { cn } from '@/lib/utils';
+import { WorkspaceManager } from './WorkspaceManager';
+import { Users } from 'lucide-react';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -60,6 +62,7 @@ export const SettingsDialog = ({
   onStartWork,
   onMoveVehicle,
 }: SettingsDialogProps) => {
+  const [showWorkspace, setShowWorkspace] = useState(false);
   const [currentView, setCurrentView] = useState<DialogView>('menu');
   const [hourlyRate, setHourlyRate] = useState(settings.defaultHourlyRate.toString());
   const [cloningRate, setCloningRate] = useState(settings.defaultCloningRate?.toString() || '');
@@ -314,6 +317,17 @@ export const SettingsDialog = ({
                   <span>Backup & Restore</span>
                   <div className="flex items-center gap-2">
                     <Cloud className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between h-auto py-4 bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/30 font-semibold mt-2"
+                  onClick={() => setShowWorkspace(true)}
+                >
+                  <span>Workspace & Account</span>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
                     <ChevronRight className="h-4 w-4" />
                   </div>
                 </Button>
@@ -714,6 +728,7 @@ export const SettingsDialog = ({
         onStartWork={onStartWork}
         onMoveVehicle={onMoveVehicle}
       />
+      <WorkspaceManager open={showWorkspace} onOpenChange={setShowWorkspace} />
     </Dialog>
   );
 };
