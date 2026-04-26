@@ -1259,7 +1259,7 @@ export const TaskCard = ({
 
         if (error) throw error;
         if (onUpdateTask) {
-          onUpdateTask({ ...task, diagnosticPdfUrl: data.url });
+          onUpdateTask({ ...task, diagnosticPdfUrl: data.url, diagnosticPdfPath: data.path });
         }
         toast({ title: 'Uploaded', description: 'Diagnostic PDF attached to this task' });
       } catch (err) {

@@ -568,7 +568,7 @@ const DesktopDashboard = () => {
         });
 
         if (error) throw error;
-        updateTask(taskId, { diagnosticPdfUrl: data.url });
+        updateTask(taskId, { diagnosticPdfUrl: data.url, diagnosticPdfPath: data.path });
         toast({ title: 'Uploaded', description: 'Diagnostic PDF attached to this task' });
       } catch (err) {
         console.error('Upload diagnostic error:', err);
