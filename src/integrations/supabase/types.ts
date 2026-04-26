@@ -190,6 +190,7 @@ export type Database = {
     }
     Functions: {
       claim_unclaimed_workspace: { Args: never; Returns: string }
+      create_workspace: { Args: { _name: string }; Returns: string }
       has_workspace_role: {
         Args: {
           _role: Database["public"]["Enums"]["workspace_role"]
