@@ -1,54 +1,46 @@
-## Goal
+# Portal PIN Lockout
 
-Fix the security finding `session_photos_public_bucket_no_select_policy` by making the `session-photos` bucket private and ensuring only authorized viewers (workspace members in-app, and clients with a valid portal access code) can read photos.
+Add server-side attempt tracking and lockout to the `get-portal` edge function. After 3 failed PIN attempts within a 30-minute rolling window, the portal is locked for 1 hour.
 
-## Approach
+## Database (migration)
 
-Photos are currently uploaded to a public bucket and the resulting public URL (`p.cloudUrl`) is stored in:
-- Each session's photo record (used by the desktop gallery / `ClientCostBreakdown`)
-- The slimmed portal payload (`ph` field) synced to `client_portals.data`
+Add three nullable columns to `public.client_portals`:
 
-To keep both flows working without exposing photos publicly, we'll switch to **storage paths** (e.g. `<workspace>/<task>/<photo>.jpg`) instead of full public URLs, and mint **short-lived signed URLs on demand** through edge functions.
+- `failed_attempts` integer NOT NULL DEFAULT 0
+- `first_failed_at` timestamptz NULL — start of the current 30-min window
+- `locked_until` timestamptz NULL — when the lockout expires
 
-## Changes
+No RLS changes needed (table is already locked down; the edge function uses the service role).
 
-### 1. Migration: lock down the bucket
+## Edge function: `supabase/functions/get-portal/index.ts`
 
-- `UPDATE storage.buckets SET public = false WHERE id = 'session-photos';`
-- Drop the existing permissive `session-photos` policies on `storage.objects`.
-- Add a SELECT policy: workspace members can read objects whose path starts with their `workspace_id/` (uses `is_workspace_member`).
-- Keep INSERT/UPDATE restricted (uploads already go through the `upload-photo` edge function with the service role).
+When a portal has an `access_code` and is not in `preview` mode:
 
-### 2. `upload-photo` edge function
+1. **Before validating the code**, check `locked_until`:
+   - If `locked_until > now()`, return HTTP 429 with `{ error: "Too many attempts", lockedUntil, retryAfterSeconds }`. Do not reveal whether the supplied code was right.
+2. **If no `code` provided**, return the existing `requiresCode` metadata response (no counter changes).
+3. **If code matches**: reset `failed_attempts = 0`, `first_failed_at = null`, `locked_until = null`, then return portal data as today.
+4. **If code is wrong**:
+   - If `first_failed_at` is null OR older than 30 minutes → reset window: `failed_attempts = 1`, `first_failed_at = now()`.
+   - Else increment `failed_attempts`.
+   - If new `failed_attempts >= 3` → set `locked_until = now() + 1 hour` and return HTTP 429 with `lockedUntil`.
+   - Otherwise return HTTP 403 `{ error: "Invalid access code", attemptsRemaining }`.
 
-- Return the storage `path` (e.g. `<wsId>/<taskId>/<photoId>.jpg`) in addition to (or instead of) the public URL. The client should persist the path as the canonical reference.
+All counter writes use the service role client already in the function. Preview mode (`preview=1`, used by the workspace owner inside the app) bypasses both the lockout and the counter so internal users can never lock themselves out.
 
-### 3. New edge function: `sign-photo-urls`
+## Client: `src/pages/ClientPortal.tsx`
 
-- Authenticated endpoint. Body: `{ paths: string[] }`.
-- Verifies the caller's JWT, resolves their workspace via `user_primary_workspace`, and rejects any path not prefixed with that workspace id.
-- Returns `{ urls: Record<path, signedUrl> }` using `storage.from('session-photos').createSignedUrls(paths, 3600)`.
-- Used by the in-app desktop/mobile gallery to render private photos.
+When the portal call returns 429:
 
-### 4. Update `get-portal` edge function
+- Show a clear message: "Too many incorrect attempts. Try again at HH:MM" (formatted from `lockedUntil`).
+- Disable the PIN input until that time.
 
-- After loading `client_portals.data`, walk `data.v[].s[].ph[]`, treat each entry as either a legacy public URL (leave as-is during migration) or a storage path, and replace storage paths with signed URLs (1-hour expiry) before returning the payload.
-- This keeps the public client portal working (access-code gated) while removing the unauthenticated public-URL exposure for any newly uploaded photos.
+When the portal returns 403 with `attemptsRemaining`:
 
-### 5. Client code
+- Show "Incorrect code. N attempt(s) remaining."
 
-- `src/services/photoStorageService.ts` (or wherever uploads are handled): persist the returned `path` on the photo record (e.g. `cloudPath`) alongside / replacing `cloudUrl`.
-- `src/lib/clientPortalUtils.ts`: in `slimDown`, send `cloudPath` (or fall back to `cloudUrl`) in `ph[]`.
-- `src/components/ClientCostBreakdown.tsx` and any other in-app photo viewer: when rendering authenticated views, call `sign-photo-urls` to get a short-lived URL for each path; cache the result for the page lifetime.
-- `ClientPortal.tsx`: no client change needed — `get-portal` returns ready-to-use signed URLs.
+## Notes
 
-### 6. Backwards compatibility
-
-- Existing photos uploaded under the old `<taskId>/<photoId>.jpg` layout still have their public URLs stored in `cloudUrl`. After flipping the bucket to private these URLs stop working. Options:
-  - (a) Leave them broken — acceptable if there are no production users yet.
-  - (b) Add a one-time migration script that copies legacy objects under `<wsId>/...` (requires knowing the workspace per task) and re-issues paths.
-- Recommendation: go with (a) given the project is pre-launch; document it in the final summary.
-
-## Security finding follow-up
-
-After the migration deploys, mark `supabase_lov / session_photos_public_bucket_no_select_policy` as fixed with an explanation referencing the new private bucket + signed-URL flow.
+- This is a per-portal account-lockout control, not generic API rate limiting — consistent with project policy.
+- 4-digit PIN length is unchanged; lockout reduces the practical brute-force space to ~3 guesses per hour per portal.
+- Successful entry fully clears the counter, so legitimate users who mistype once or twice are not penalized later.

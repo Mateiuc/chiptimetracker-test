@@ -688,6 +688,8 @@ export async function checkPortalAccess(portalId: string, preview?: boolean): Pr
   requiresCode: boolean;
   clientName?: string;
   data?: ClientCostSummary;
+  locked?: boolean;
+  lockedUntil?: string | null;
 }> {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   let url = `https://${projectId}.supabase.co/functions/v1/get-portal?id=${encodeURIComponent(portalId)}`;
@@ -706,7 +708,12 @@ export async function checkPortalAccess(portalId: string, preview?: boolean): Pr
   const result = await resp.json();
 
   if (result.requiresCode) {
-    return { requiresCode: true, clientName: result.clientName };
+    return {
+      requiresCode: true,
+      clientName: result.clientName,
+      locked: !!result.locked,
+      lockedUntil: result.lockedUntil ?? null,
+    };
   }
 
   // No code required — data is included
@@ -735,8 +742,13 @@ export async function fetchPortalWithCode(portalId: string, code: string): Promi
   );
 
   if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error || 'Invalid access code');
+    const err: any = await resp.json().catch(() => ({ error: 'Request failed' }));
+    const e: any = new Error(err.error || 'Invalid access code');
+    e.status = resp.status;
+    e.locked = !!err.locked;
+    e.lockedUntil = err.lockedUntil ?? null;
+    e.attemptsRemaining = typeof err.attemptsRemaining === 'number' ? err.attemptsRemaining : null;
+    throw e;
   }
 
   const result = await resp.json();
