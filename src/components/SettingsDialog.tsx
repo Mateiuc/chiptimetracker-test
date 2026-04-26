@@ -16,6 +16,8 @@ import { ManageClientsDialog } from './ManageClientsDialog';
 import { getVehicleColorScheme } from '@/lib/vehicleColors';
 import { BackupView } from './BackupView';
 import { cn } from '@/lib/utils';
+import { WorkspaceManager } from './WorkspaceManager';
+import { Users } from 'lucide-react';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -60,6 +62,7 @@ export const SettingsDialog = ({
   onStartWork,
   onMoveVehicle,
 }: SettingsDialogProps) => {
+  const [showWorkspace, setShowWorkspace] = useState(false);
   const [currentView, setCurrentView] = useState<DialogView>('menu');
   const [hourlyRate, setHourlyRate] = useState(settings.defaultHourlyRate.toString());
   const [cloningRate, setCloningRate] = useState(settings.defaultCloningRate?.toString() || '');
